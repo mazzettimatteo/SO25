@@ -74,20 +74,86 @@ void es3(){
 riempia con valori (es. random), la stampi in forma tabellare e liberi tutta la
 memoria allocata.
 */
-//DA FINIRE
-int * creaMatrice(int n, int m){
-	int * M=malloc(n*sizeof(int *));
-
-
-	
-
+int ** creaMatrice(int n, int m){
+	int ** M=malloc(n*sizeof(int *));
 	for(int i=0;i<n;i++){
-		for(int * j=0;j<m;j++){
-			M[i][j]=rand()%10;
-		}
+		M[i]=calloc(m,sizeof(int));
 	}
 
 	return M;
+}
+
+void printMatrix(int ** M, int n, int m){
+	for(int i=0;i<n;i++){
+		for(int j=0;j<m;j++){
+			printf("%d",M[i][j]);
+		}
+		printf("\n");
+	}
+}
+
+void freeMem(int ** M,int n,int m){
+	for(int i=0;i<n;i++){
+		free(M[i]);
+	}
+	free(M);
+}
+
+void es4(){
+	int righe=4, colonne=6;
+	int ** A=creaMatrice(righe,colonne);
+	printMatrix(A,righe,colonne);
+	printf("%p \n",&A);
+	freeMem(A,righe,colonne);
+	printf("%p \n",&A);
+	
+}
+
+
+/*5. Definisci una struttura Node con campo value e puntatore next.
+Implementa le funzioni:
+o insert_head per inserire un nodo in testa,
+oprint_list per stampare tutti gli elementi,
+ofree_list per deallocare la lista*/
+
+struct Node{
+	int val;
+	struct Node * next;
+};
+typedef struct Node * pnode;
+
+pnode headInsert(pnode p, int value){
+	pnode temp=malloc(sizeof(struct Node));
+	temp->val=value;
+	temp->next=p;
+	return temp;
+}
+
+void printList(pnode p){
+	while(p!=NULL){
+		printf("%d ",p->val);
+		p=p->next;
+	}
+}
+
+void freeList(pnode p){
+
+	while(p!=NULL){
+		pnode temp=p;
+		p=p->next;
+		free(temp);
+	}
+}
+
+void es5(){
+	pnode h=NULL;
+	for(int i=0;i<5;i++){
+		h=headInsert(h,i);
+	}
+	printList(h);
+	freeList(h);
+		
+	
 }
 
 
@@ -95,6 +161,9 @@ int main(){
 	//es1();
 	//es2();	
 	//es3();
+	//es4();
+	es5();
+	
 	
 
 	return 0;

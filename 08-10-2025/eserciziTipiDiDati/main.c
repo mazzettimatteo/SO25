@@ -10,8 +10,7 @@ i char occupano 1byte l'uno ma poi la CPU li promuove per ottenere parolo della 
 C'è il problema analogo per le operazioni size: usiamo quindi size_t per tutte le operazioni di dimensione/memoria.
 */
 
-/*
-Scrivere un programma che stampi:
+/*1. Scrivere un programma che stampi:
 la dimensione in byte dei tipi base 
 (char, int, unsigned int, float, double),
 il valore minimo e massimo per interi e floating point (usando <limits.h> e
@@ -32,7 +31,7 @@ void es1(){
 }
 
 
-/*Scrivere un programma che dichiari una variabile intmax_t (da <stdint.h>)
+/*2. Scrivere un programma che dichiari una variabile intmax_t (da <stdint.h>)
 e la stampi. Il programma deve essere portabile.*/
 #include<inttypes.h>
 void es2(){
@@ -42,19 +41,20 @@ void es2(){
 }
 
 
-/*Scrivere un programma che:
+/*3. Scrivere un programma che:
 dichiari unsigned int u = 0; e int s = -1;,
 stampi il valore di u - 1, verifichi se s < u e spieghi il risultato.*/
 void es3(){
 	unsigned int u=0;
 	int s=-1;
-	printf("DA FINIRE");
+	printf("%u \n",u-1);
+	printf("%d",(s<u));
 }
 
 
 
 
-/*Scrivere un programma che:
+/*5. Scrivere un programma che:
 definisca un enum con flag READ, WRITE, EXEC come maschere di bit,
 combini i permessi con |, li modifichi con & ~, stampi il risultato in binario
 dopo ogni modifica.*/
@@ -83,14 +83,27 @@ void es5(){
 	printBits(p); 
 }
 
+/*4. Scrivere un programma che:
+dichiari char c = 200; signed char sc = 200; unsigned char uc =
+200;,stampi i tre valori, determini a runtime se char è interpretato come
+signed o unsigned sulla piattaforma.
+*/
+
+void es4(){
+	char c=200;
+	signed char sc=200;
+	unsigned char uc=200;
+
+	printf("c:%d, sc:%d, uc:%d",c,sc,uc);
+}
 
 
 int main(){
 	//es1();
 	//es2();
-	//es3();	DA FINIRE
-	//DA FARE es4();
-	es5();	//a cosa serve sta roba???  
+	//es3();	
+	es4();
+	//es5();	//a cosa serve sta roba???  
 
 
 
