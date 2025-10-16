@@ -1,0 +1,94 @@
+16-10-2025 comandi shell:
+
+posix: definisce una serie di standard per allineare una serie di cose fra vari sistemi operativi UNIX like
+
+la shell accetta comandi della forma: comando opzioni argomenti
+argomenti(oggetti su cui eseguo un comando)
+opzioni(preceduti da - o -- per versione non estesa o estesa)
+
+tasti di contollo della shell: 
+	ctrl s sospende la visualizzazione
+	ctrl q riattiva la qisualizzazione
+	ctrl d chiude la sessione shell
+	ctrl c cancella un operazione
+	ctrl r per ricercare un comando precedente
+
+documentazione reperibile tramite
+	man command(manuale rapido)
+	info command(manuale integrale)
+	apropos keyword(permette di cercare un comando se non lo ricordi in base alla keyword inserita)
+	man man(manuale del manuale)
+	info
+	EG: info ls, man ls per informazioni sul comando ls
+	
+ls:
+	-a vedo anche file nascosti
+	-lgsF file.txt per ottenere info complete sul file
+	
+rmdir: cancellla solo una directory vuota
+rm: rimuove un file
+per rendere rm ricorsivo: rm -r folder/ ed elimina folder e i file al suo interno
+
+	 
+file system:
+è l'isieme dei file e directory e il loro modo di essere organizzati sul disco.
+La directory root indicata con / è la radice dell'albero di directory
+
+/
+|	/bin
+|	/sbin
+|	/var
+|	/home
+|	|	/utente1
+|	|	/utente2
+|	|	...
+|	/lib
+|	...
+|	/usr
+|	|	/X11R6
+|	|	/bin
+|	|	/include
+|	|	/lib
+|	|	/local
+|	|	/share
+|	|	/src
+|	|	|	/linux
+
+Percorso relativo rispetto a /usr/bin : ../src/linux
+Percorso assoluto: /usr/src/linux (i percorsi sono assoluti se iniziano con / )
+Notare che .. vuol dire directory padre e . directory attuale
+
+Per fare ls su /home/utente2 da /usr/src/linux faccio: ls ../../../home/utente2
+
+Ogni file è associato a  un utente proprietario del file e un gruppo di utenti che hanno permessi particolari su quel file. 
+Per identificarli ci sono user id e group id.
+Per cambiare il proprietario si usa il comando chown newUserId file(s) ovvero change owneship
+
+A ogni file sono associati 3 flag per utente, 3 per group e 3 per altri: i flag sono RWX ossia R-Read, W-Write, X-Execute
+Per modificare questi permessi uso chmod who+what dove who=u,g,o e what=r,w,x (u=user, g=group, o=others)
+Altrimenti posso velocizzare usando i numeri: chmod 453 vuol dire U=R G=R+X, O=W+X
+Dove ogni cifra nel comando chmod XYZ corrisponde a u,g,o e tutti i read=4, write=2, execute=1 e si usano le somme: 
+4,7,3 vuol dire User(read=4),Group(read+write+execute=4+2+1=7),Others(write+execute=2+1=3)
+
+rm ReMove files
+cp CoPy files
+mv MoVe or rename file
+ln LiNk creation(symbolic or not)
+	ln file hlink
+		è un hard link che crea una entry nella directory corrente chiamata hlink con lo stesso inode number di file
+		Se cancello il file il link number dell'inode viene decrementato
+	ls -s file slink
+		è un soft link(o link simbolico). Crea un file speciale nella dir corrente chiamato slink che punta alla directory entry file
+		Il link number dell'inode di file non viene incrementato
+		Se cancello iil file il link simbolico diventa stale ovvero punta a un file non esistente
+more, less page through a text file
+df [options] [directory] mostra lo spazio libero nei dischi
+du [options] [directory] stima lo spazio occupato da un file
+
+
+
+
+
+
+
+
