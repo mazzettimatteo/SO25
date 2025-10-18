@@ -1,0 +1,75 @@
+class semaforoBin:
+	private int val
+	queue Q0=new queue
+	queue Q1=new queue
+	semaforoBin()
+		val=1
+	void P()
+		[enter CS]
+		pid=<process id>
+		if(val==0)
+			Q0.enqueue(pid)
+			suspend(pid)
+		else if(Q1.size>0)
+			pid=Q1.dequeue()
+			wakeup(pid)
+		else
+			val--
+		[exit cs]
+	void V()
+		[enter CS]
+		pid=<process id>
+		if(val==1)
+			Q1.enqueue(pid)
+			suspend(pid)
+		else if(Q0.size>0)
+			pid=Q0.dequeue()
+			wakeup(pid)
+		else
+			val++
+		[exit CS]
+
+l'operazione P
+- attende che il valore del semaforo sia positivo
+- decrementa il valore del semaforo
+	while(s<=0)wait
+	s--
+
+l'operazione V
+- incrementa il valore del semaforo
+	s++
+
+Prima di accederea una CS o a una risorsa condivisa fai P(wait) e appena hai finito fai V(signal):
+
+eg:
+
+semaphore s=semaphore(1)
+shared resource x
+process1:
+	s.P()
+	//ora posso usare x senza avere paura che qualcun altro vi acceda	process2:
+	x=3+4										//voglio usare x ma devo attendere perché s è <=0 a causa dell'invocazione in process1 a P, faccio richiesta di entrare con P
+	x++										s.P()	//una volta che process1 ha smesso di usare x posso accedervi da qui
+	x-=7										x=89
+	//ho finito di usare x e quindi sblocco tutto					x=6*3-7
+	s.V()										//non mi serve più x quindi do il segnale che non mi serve più
+											s.V()
+
+
+All’inizio: s = 1 → la risorsa è libera.
+Se process1 chiama s.P(), s diventa 0 → nessun altro può entrare.
+process2 tenta s.P() → trova s = 0 → si blocca e attende.
+Quando process1 termina e chiama s.V(), s torna a 1 → sblocca process2.
+Ora process2 entra nella sezione critica.
+
+
+
+
+
+
+
+
+
+
+
+
