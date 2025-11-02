@@ -9,30 +9,162 @@ Attributi associati ai processi:
 	altro		memoria utilizzata, cpu impegnata
 
 Faendo il comando ps otteniamo lìlo stato dei processi attivi nel sistema:
->ps
+ps
 PID TTY    TIME      CMD
 648 pts/2  00:00:00  bash
 
 Il comando nice esegue un comando con priorità statistica diversa:
->nice -n 19 command
+nice -n 19 command
 (-n 19) imposta il comando a niceness +19
 
 Il comando renice cambia la priorità di un processo in esecuzione
->renice [+-]value -p pid
+renice [+-]value -p pid
 
 il comando kill termina un processo
->kill pid	(terminazione non forzata con segnale 15)
->kill -9 pid	(terminazione forzata con segnale 9)
+kill pid	(terminazione non forzata con segnale 15)
+kill -9 pid	(terminazione forzata con segnale 9)
 
 Gestione dei processi:
 - processi in foreground: sono processi che "controllano" il terminale da cui sono stati lanciati. Un solo processo alla volta è in foreground
 - processi in background: vengono eseguiti senza controllare il terminale a cui sono "attaccati"
 - job control: permentte di portare in foreground un processo in background e viceversa
-- l'opzione "&": lancia un processo direttamente in background. EG: >long_cmd &
+- l'opzione "&": lancia un processo direttamente in background. EG: long_cmd &
 - "^Z": stoppa il processo in foreground 
 - jobs: lista i processi in background
-- l'opzione "%n": si riferisce all n-esimo processo in background. EG di kill del proceddo pid=72: >kill %72
+- l'opzione "%n": si riferisce all n-esimo processo in background. EG di kill del proceddo pid=72: kill %72
 - fg: porta un processo da background a foreground. EG: fg &34
 - bg: fa ripartire i processi in background fermat
 
+-------------------------------------------------------------------------------------
+
+Esistono vari tipi di shell: 
+- Bourne shell (sh)
+- Korn shell (ksh)
+- C shell (csh, tcsh)
+- Bash/Bourne again shell (bash)
+Tutte queste shell hanno delle caratteristiche comuni(common core):
+per  vedere quale shell si sta utilizzzando si può eseguire il comando echo $SHELL che mostra il contenuto della variabile Shell
+EG: 
+	echo $SHELL
+	/bin/bash
+per cambiare shell: chsh [<username>]
+
+Comandi:
+- Esterni: quando si richiede l'esecuzione di uno di questi, il corrispondente dile eseguibile viene cercato ed eseguito
+           EG: il comando ls si trova in /bin/ls
+- Interni: il comando viene riconosciuto ed eseguito direttamente dalla shell
+	   EG: echo 
+	       cd
+
+Caratteri speciali:
+>, >> e <	Redirezione I/O
+|		pipe
+*, ? e [...]	wildcards
+`command`	command substitution
+;		esecuzione sequenziale
+|| e &&		esecuzione condizionale
+(...)		raggruppamento di comandi
+&		esecuzione in background
+"" e ''		quoting
+#		commento
+$		espansione di variabile
+\		carattere di escape
+<<		here documents
+
+Ogni processo è associato a tre "stream": standard output(stdout), standard input(stdin) e standard error(stderr)
+
+La redirezione I/O e pipe permettono di "slegare" questi stream dalle loro sorgenti/destinazioni abituali e di legarli ad altre sorgenti/destinazioni
+EG redirezione:
+- per salvare l'output di ls su file.txt
+  ls > file.txt
+- per aggiungere l'output di ls in fondo a file.txt
+  ls >> file.txt
+- per spedire via mail il contenuto di file.txt
+  mail maildestinatario@example.com < file.txt
+- redireziona stdout e stderr del comando rm al file /dev/null
+  rm file.txt >& /dev/null
+  >& serve per reindirizzare stdout e stderr insieme
+  il file /dev/null è il posto dove finirà file.txt
+  Nota: null è come un buco nero che elimina tutto senza mostrare errori del comando rm
+  però potrei in realtà scrivere rm file.txt >& /miofolder/miofile e così file.txt andrebbe lì
+
+La shell permette anche di usare lo stdout di un rocesso come stdin di un altro.
+EG pipe:
+  ls mi restituisce: folderA folderB folderC folderD file1.txt file2.txt
+  poi faccio: ls | wc -w 
+  succede chee che ls produce in output: folderA folderB folderC folderD file1.txt file2.txt e la pipe | lo passa al comando wc -w che ritorna 6
+  perché il comando wc -w è il comando word count che conta il numero di parole ricevute in input.
+EG pipe con tee(tee è come un giunto a T dei tubi: divide il segnale id input)
+  who | tee utentiAttualmenteConnessi.txt | sort
+  dal comando who vedo gli utenti attualmente connessi e salvo la lista nel file.txt 
+  e inoltre mando avanti lo stdout ottenuto da who come stdin per il comando sort
+
+La stringa contenente wildcards ciene sostituita con l'elenco di file che soddisfano la condizione:
+*	matching di quasiasi stringa
+?	matching di qualsiasi carattere singolo
+[...] 	matching di qualsiasi carattere inserito nelle parentesi
+EG *:
+  *.c		tutti i file .c
+  a*		tutti i file che iniziano con a
+  *pizza*	tutti i file che hanno la sottostringa "pizza" nel nome
+EG ?:
+  ciao?.c 	può corrispondere a tutti i file che hanno un carattere al posto del punto interrogativo come ciaoA.c, ciaob.c ciamo6.c
+EG [...]:
+  ciao[1-9].c	file del tipo ciao1.c ciao2.c ciao3.c .. file9.c
+  ciao[ABC]	tre file possibili: ciaoA.c ciaoB.c ciaoC.c
+  ciao[1-9a-e]  combinando due intervalli può andare bene un file ciaoX.c dove X è una lettera da a..f oppure un numero da 1..9
+
+Gli apici inversi(AltGr+') servono per fare command substitution: il comando racchiuso fra apici viene eseguito e il suo standard output viene sostituito al posto del comando.
+EG:
+  echo "i file in questa cartella sono `ls`"
+
+Il metacarattere ; viene usato per eseguire due comandi in sequenza(sequenza non condizionale)
+EG:
+  pwd ; ls; cd ..
+  ls >> listaDeiFile.txt ; cat listaDeiFile.txt
+
+Le sequenze condizionali possono essere costruite con || oppure con &&-
+||: usato per eseguire due comandi in sequenza seolo se il primo ha un exitcode uguale a 1(failure)
+&&: usato invece per mettere in sequenza due comandi solo se il primo ha exit code 0(success)
+EG:
+  gcc main.c && ./a.out				se si riesce a compilare poi il file oggetto viene eseguito.
+  gcc main.c || echo "compilazione fallita"	se non si riesce a compilare viene scritto su terminale compilazione fallita 
+
+E' possibile raggruppare coamndi chiudendoli dentro parentesi.
+EG:
+  (pwd ; cd .. ; ls) > file.txt
+
+Per l'esecuzione in background(generata dal metacarattere & alla fine di un comando) viene generata una subshell 
+e il comando è eseguito in concorrenza con la shell che stiamo utilizzando noi. Questa subshell non prende il controllo della tastiera.
+EG:
+ls &
+
+Esiste la possibilità (tramite quoting) di disabilitare wildcard/command substitution/variable substitution.
+Le single quotes ' (apici normali non inversi) inibiscono wildcard/command substitution/variable substitution
+mentre le double quotes " inibiscono solo le wildcard.
+EG:
+  echo "my name is $name and date is `date` "
+  echo 'my name is $name and date is `date` '
+
+Per comandi raggruppati da parentesi, per l'esecuzione di script e quando si esegue un processo in background con &
+viene creata una subshell(child shell) che ha queste due caratteristiche:
+- la loro directory corrente è (cd/ ; pwd) 
+- hanno due distinte aree di variabili che sono gestite differentemente
+Ogni shell supporta due tipi di variabili:
+- variabili locali: 	non ereditate da shell alle subshell da essa create
+		    	usate per computazioni locali all'interno di uno script
+- variabili d'ambiente: ereditate da shell a child shell 
+			utilizzate per comunicazioni fra parent e child
+Entrambe le tipologie contengono dati di tipo string.
+Ogni shell ha variabili d'ambiente inizializzate da file di startup o dalla shell stessa come sono:
+$HOME, $PATH, $MAIL, $USER, $SHELL, $TERM ...
+Per visualizzarle tutte si può usare il comando: env
+Per accedere al contenuto di una variabile bisogna usare il metacarattere $.
+Nota: $name è la versione abbreviata di ${name}
+Per assegnare un valore ad una variabile la sintassi cambia da shell a shell ma nel caso di bash
+variabile="matteo mazzetti"
+mettere i doppi apici previene i problemi di spazi che si posso avere con le stringhe
+senza l'effetto sarebbe che nome=matteo e poi si prova ad eseguire il comando mazzetti.
+Le variabili dichiarate in questo modo sono locali, mentre per trasformarle in variabili d'ambiente 
+bisogna usare il comando: export variabile
 

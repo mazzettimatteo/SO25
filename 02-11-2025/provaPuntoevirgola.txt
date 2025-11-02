@@ -1,0 +1,6 @@
+appunti.txt
+dirPerTestLink
+hlink
+provaPuntoevirgola.txt
+slink
+utentiOraConnessi.txt
