@@ -1,0 +1,4 @@
+hello, worlds!
+Anche se ho rimosso il file che questo hlink linkava posso ancora accedervi da qui: 
+eliminando quel file in realtà ho eliminato il collegamento da fileDaLinkare->quessto file di testo 
+ma esiste ancora il collegamento hlink->questo file di testo

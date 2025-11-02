@@ -122,6 +122,13 @@ struct Node{
 };
 typedef struct Node * pnode;
 
+//struttura alternativa
+typedef struct{
+	int value;
+	lista * next;
+}lista;
+
+
 pnode headInsert(pnode p, int value){
 	pnode temp=malloc(sizeof(struct Node));
 	temp->val=value;

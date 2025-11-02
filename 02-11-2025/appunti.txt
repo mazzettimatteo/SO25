@@ -1,0 +1,38 @@
+Attributi associati ai processi:
+	pid 		identificatore processo
+	ppid		parent pid(identificatore del processo padre)
+	nice number	priorità statistica del processo(si può modificare con il comando "nice")
+	TTY		terminal device associata al processo
+	real, effective user id
+	real, effective group id 
+			identificatore dell'owner e del group owner del proesso
+	altro		memoria utilizzata, cpu impegnata
+
+Faendo il comando ps otteniamo lìlo stato dei processi attivi nel sistema:
+>ps
+PID TTY    TIME      CMD
+648 pts/2  00:00:00  bash
+
+Il comando nice esegue un comando con priorità statistica diversa:
+>nice -n 19 command
+(-n 19) imposta il comando a niceness +19
+
+Il comando renice cambia la priorità di un processo in esecuzione
+>renice [+-]value -p pid
+
+il comando kill termina un processo
+>kill pid	(terminazione non forzata con segnale 15)
+>kill -9 pid	(terminazione forzata con segnale 9)
+
+Gestione dei processi:
+- processi in foreground: sono processi che "controllano" il terminale da cui sono stati lanciati. Un solo processo alla volta è in foreground
+- processi in background: vengono eseguiti senza controllare il terminale a cui sono "attaccati"
+- job control: permentte di portare in foreground un processo in background e viceversa
+- l'opzione "&": lancia un processo direttamente in background. EG: >long_cmd &
+- "^Z": stoppa il processo in foreground 
+- jobs: lista i processi in background
+- l'opzione "%n": si riferisce all n-esimo processo in background. EG di kill del proceddo pid=72: >kill %72
+- fg: porta un processo da background a foreground. EG: fg &34
+- bg: fa ripartire i processi in background fermat
+
+
