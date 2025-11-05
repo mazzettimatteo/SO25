@@ -1,0 +1,191 @@
+Derivare una soluzione basata su semafori(ANDREWS):
+1) definire il problema con precisione
+   
+2) abbozzare una soluzione
+   produrre un primo schema di soluzione e identificare le regioni che richiedono accesso atomico o mutua esclusione
+3) garantire l'invariante
+   verificare che l'invariante sia sempre verificato
+4) implementare le azioni atomiche
+   esprimere le azioni atomiche e gli statement await(...) 
+
+Trasformiamo un azione atomica <s> diventerà:
+mutex.P()
+S
+mutex.V()
+
+Trasformiamo lo statemant await in uno statement con semafori
+<await(B)->S> diventerà:
+mutex.P()
+if !B  
+	waiting[i]:=true	//oppure waiting[i]++
+	mutex.V()
+	s[i].P()
+	waiting[i]:=false	//oppure waiting[i]--
+S
+SIGNAL()			//non deterministica
+
+dove SIGNAL() è così definita:
+void SIGNAL(){	//verifica se esiste un processo, fra quelli in attesa, che può proseguire: gli passa il testimone( baton) altrimenti rilascia la mutua esclusione
+	if B[0] && waiting[0]>0
+		sem[0].V()
+	ifNonDet B[1] && waiting[1]>0
+		sem[1].V()
+	...
+	ifNonDet B[n-1] && waiting[n-1]>0
+		sem[n-1].V()
+	else
+		mutex.V()
+}
+
+Per il problema di lettori/scrittori:
+process Reader{
+	while true
+		mutex.P()
+		if !(nw==0)  
+			waitingr++
+			mutex.V()
+			semReader.P()
+			waitingr--
+		nr++
+		SIGNAL()	
+		read the database
+		mutex.P()
+		nr--
+		SIGNAL()
+}
+
+process Writer{
+	while true
+		mutex.P()
+		if !(nr==0 && nw==0)  
+			waitingw++
+			mutex.V()
+			semWriter.P()
+			waitingw--
+		nw++
+		SIGNAL()	
+		read the database
+		mutex.P()
+		nw--
+		SIGNAL()
+}
+
+void SIGNAL(){
+	if(nw==0 && waitingr>0)
+		semreader.V()
+	elseIfNonDet(nw==0 && nr==0 && waitingw>0)
+		semWriter.V()
+	else
+		mutex.V()
+}
+
+Possiamo ridurre le chiamate a SIGNAL verificando, ogni volta che viene invocata, se c'è una sola condizione possibile,
+in quel caso non ha senso chiamare SIGNAL: mettiamoci solo il blocco che verrà eseguito.
+Notiamo che bisogna poi controllare e aggiustare il codice per evitare la starvation degli scrittori.
+
+ESERCIZI:
+
+1) esame 23-01-2024 esercizio C2
+loop thread A eseguito 2 volte
+loop thread B eseguito 2 volte
+
+Analizziamo i possibili cammini esecutivi:
+thread A:	n+1 
+	      	n+2
+thread B:	n*2
+	      	n*3
+        inizio(n=0)
+     A /         \ B
+      /		      \
+     n=1          n=0
+     B \         / A	
+        \       /
+      n=2 oppure n=1
+          /  \
+         /    \
+    n=4 o 3	n=6 o 3
+      	\  	/
+   	    \   /
+       n=8 o 5 o 12 o 9
+
+
+
+2) Esercizio inventato 
+abbiamo tanti processi che fanno:
+Process Pn{
+while true		
+	enter
+	elabora in 3//per questa elaborazione servono 3 proceessi alla volta per farla
+	exit
+}
+
+quali dati condivisi dobbiamo tenere?
+dobbiamo sapere quanti sono i processi in attesa e quanti stanno processando:
+int waitingCont
+int processingCont
+ci serve un mutex:
+semaphore mutex(1)
+coi serve un semaforo che ci indichi l'attesa
+semaphore waiting(0)
+
+enter(){
+mutex.P()
+waitingCont++
+if !(waitingCont>=3 && processingCont==0)
+	mutex.V()
+	waiting.P()	
+waitingCont--
+processingCont++	
+if processing<3
+	waiting.V()
+else
+	mutex.V()
+			
+}
+
+exit(){
+mutex.P()
+prcessingCont--
+if processingCont==0 && waitingCont>=3
+	waiting.V()
+else
+	mutex.V()
+}
+
+
+2') come l'esercizio precedente ma in un altro modo:
+Process Pn{
+   while true		
+	   enter
+	   elabora in 3//per questa elaborazione servono 3 proceessi alla volta per farla
+	   exit
+}
+
+  
+
+semaphore mutex(1)
+q=new semaphore queue()
+int processing
+enter(){
+   mutex.P()
+   if processing ==0 && q.size()>2
+      semaphore s(0)
+		q.enqueue(s)
+		mutex.V()
+		s.P()
+	else
+		processing=3
+		s=q.dequeue()
+		mutex.V()
+}
+
+exit(){
+	mutex.P()
+	processing--
+	if processing==0 && q.size()>=3
+		processing=3
+		s=q.dequeue();	s.V()
+		s=q.dequeue();	s.V()	
+		s=q.dequeue();	s.V()
+	mutex.V()
+}
