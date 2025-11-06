@@ -132,7 +132,7 @@ EG:
 
 E' possibile raggruppare coamndi chiudendoli dentro parentesi.
 EG:
-  (pwd ; cd .. ; ls) > file.txt
+  (pwd ; date ; ls) > file.txt
 
 Per l'esecuzione in background(generata dal metacarattere & alla fine di un comando) viene generata una subshell 
 e il comando è eseguito in concorrenza con la shell che stiamo utilizzando noi. Questa subshell non prende il controllo della tastiera.

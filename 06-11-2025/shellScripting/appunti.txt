@@ -1,0 +1,3 @@
+Appunti shell scripting:
+screen per shell secondarie per metterci cose da monitorareche non possonoandare in background:
+	ctrl+A per attivare le shortcut
