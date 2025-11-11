@@ -1,0 +1,132 @@
+Procedura suggerita da ANDREWS:
+1) definire il problema:
+	identificare processi, specificare problemi di sincronizzazione, introdurre le variabili necessarie e specificare un invariante
+2) abbozzare una soluzione:
+	produrre un primo schema di soluzione e identificare le regioni che necessitano di accesso atomico o mutualmente esclusivo
+3) garantire l'invariante
+	controlla che l'invariante sia sempre verificato
+4) implementa azioni atomiche
+	esprimere le azioni atomiche e gli statement await utilizzando le primitive di sincronizzazione disponibili
+
+ES 1) Producer & Consumer
+Esiste un processo "produttore" Producer che genera valori(record, caratteri, oggetti, etc.) e vuole trasferirli a un processo
+"consumatore" Consumer che prende i valori generati e li "consuma".
+La comunicazione avviene attraverso una singola variabile condivisa.
+
+Producer non deve scrivere nuovamente l'area di memoria condivisa prima che Consumer abbia effettivamente utilizzato il valore precedente.
+Consumer non deve leggere due volte lo stesso valore, ma deve attendere che Producer abbia generato il successivo.
+
+Pseudocodice:
+
+semaphore full:=new semaphore(0)
+semaphore empty:=new semaphore(1)
+int var
+
+process producer()
+	while(true)
+		temp=produce.var()
+		empty.P()
+		var:=temp
+		full.V()
+
+process consumer()
+	while(true)
+		full.P()
+		consume(var)
+		empty.V()
+
+ES 2) Lettori & Scrittori
+Abbiamo una variabile condivisa data che può essere:
+letta contemporaneamente da più lettori, ma scritta da un solo scrittore e mai mentre qualcuno legge.
+Scrivi lo pseudocodice (con semafori) per: reader() che chiama read(data) e writer() che chiama write(data)
+Condizioni da rispettare:
+Nessun lettore legge mentre uno scrittore scrive. Nessuno scrittore scrive mentre ci sono lettori attivi.
+
+Invarianti:
+//if nWriter=1 then nReader=0 
+//if nReader>0 then nWriter=0
+
+Pseudocodice:
+int data
+int nReader
+int nWriter
+process reader()
+	while(true)
+		<await(nWriter==0)->read(data)> //Attendi fino a che nWriter==0 e poi esegui read(data)
+
+process writer()
+	while(true)
+		<await(nReader==0 && nWriter==0)->write(data)>
+	
+Pseudocodice elaborato:
+int data
+int nReader
+int nWriter
+semaphore mutex:=semaphore(1)
+semaphore s[0..1]:=new semaphore array //has size=2
+bool waiting[0..1]:=new int array
+process reader()
+	while(true)
+		//<await(nWriter==0)->read(data)> diventa come segue
+		mutex.P()
+		if(nWriter!=0)
+			//we should wait
+			waiting[0]:=true
+			mutex.V()
+			s[0].P()
+			waiting[0]:=false
+		nReader++
+		read(data)
+		nReader--
+		SIGNAL()
+
+process writer()
+	while(true)
+		//<await(nReader==0 && nWriter==0)->write(data)>
+		mutex.P()
+		if(nReader!=0 || nWriter!=0)
+			waiting[1]:=true
+			mutex.V()
+			s[1].P()
+			waiting[1]:=false
+		nWriter++
+		write(data)
+		nWriter--
+		SIGNAL()
+
+SIGNAL()
+	if(nWriter==0 && waiting[0]==true)
+		s[0].V()
+	ifNonDeterministic((nReader==0 && nWriter==0) && waiting[1]==true)
+		s[1].V()
+	else
+		mutex.V()
+
+
+Quindi ricordiamo che:
+
+<S> dove S è uno statement diventa:
+	mutex.P()
+	S 
+	mutex.V()
+
+<await(B[i])->S> ossia "aspetta fino a che B[i]==true, una volta che B[i]==true fai S" diventa:
+	mutex.P()
+	if(!B[i])
+		waiting[i]:=true
+		mutex.V()
+		sem[i].P()
+		waiting[i]:=false
+	S 
+	SIGNAL()
+
+con SIGNAL() che è
+	if(B[0]==true && waiting[0]==true)
+		sem[0].V()
+	elif(B[1]==true && waiting[1]==true)
+		sem[1].V()
+	...
+	elif(B[n]==true && waiting[n]==true)
+		sem[n].V()
+	else
+		mutex.V()
