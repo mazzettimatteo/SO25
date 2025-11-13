@@ -25,7 +25,7 @@ S
 SIGNAL()			//non deterministica
 
 dove SIGNAL() è così definita:
-void SIGNAL(){	//verifica se esiste un processo, fra quelli in attesa, che può proseguire: gli passa il testimone( baton) altrimenti rilascia la mutua esclusione
+void SIGNAL(){	//verifica se esiste un processo, fra quelli in attesa, che può proseguire: gli passa il testimone(baton) altrimenti rilascia la mutua esclusione
 	if B[0] && waiting[0]>0
 		sem[0].V()
 	ifNonDet B[1] && waiting[1]>0
