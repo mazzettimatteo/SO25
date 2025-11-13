@@ -1,0 +1,44 @@
+13-11-2025
+Uno script è una qualunque sequenza di comandi che può essere registrata in un file di testo per poi essere eseguita.
+Utili per eseguire sequenze di comandi ripetitive/automatiche.
+Per eseguire uno script lo si scrive in un file, si rende eseguibile il file con chmod, digitare poi il nome del file.
+Cosa fa una shell per eseguire uno script?
+1) Determina quale shell deve essere utilizzate per eseguire lo script
+2) Crea una sottoshell che esegue lo script
+3) Il file dello script viene passato come argomento alla sottoshell
+4) Il contenuto del file viene utilizzato come input della shell
+
+1) la selezione della shell che eseguirà lo script è basata sulla prima riga dello script stesso(default bash):
+	se contiene un simbolo #, si usa la shell da cui è stato lanciato lo script
+
+Ci sono delle variabili built-in della shell:
+ $$ l’identificatore di processo della shell (sh)
+ $0 il nome dello shell script (sh, csh)
+ $1-$9 $n è l’n-esimo argomento della linea di comando(sh,csh)
+ ${n} ${n} è l’n-esimo argomento della linea di comando(sh,csh)
+ $* Lista tutti gli argomenti di command line (sh, csh)
+ $# Numero di argomenti sulla command line (sh)
+ $? Valore di uscita dell’ultimo comando eseguito (sh) 0 se è andato tutto bene, 127 se command not found, ecc..
+
+Chiaramente ppossiamo usare le variabili: per l'assegramento x=4 senza spazi, per ottenere il valore di x faccio $x:
+EG:
+	a=5
+	b=6
+	c=$a+$b
+
+Here Document è per passare l'input??? esempio2.sh 
+<commannd> << <word>
+<command> <</ <word>
+
+Esiste l'utility expr che permentte la valutazione delle espressioni. EG: expr 1+2 mi ritorna allo standard output il valore 3. Queste espressioni sono quelle arimetiche, quelle logiche e di confronto ma anche con le stringhe(match, substr, length, index).
+
+Nelle strutture di controllo della shell, gli exit status di un comando vengono usate come condizioni nei test:
+	if cmp a b > /dev/null   #suppress output
+	then echo "file eliminati"
+	else echo "files a and b differ"
+	fi
+Per confrontare numeri si usa int1 -operazione int2 come ad esempio: -ge -ne -lt -eq.
+Esistono anche le condizioni booleane: !expr oppure expr1 -a expr2 (and) -o (per l'or). Per grouping di espressioni la sintassi è \( \). Si possono fare anche i confronti tra stringhe. 
+Si possono fare test con le parentesi quadre: [ condition ] che esegue condition. Esisono anche le doppie parentesi quadre [[ e ]] per extended text command, che è preferibile a [ ] in quanto gli operatori &&, ||, >, < con le doppie quadre vengono interpretate correttamente.
+
+
