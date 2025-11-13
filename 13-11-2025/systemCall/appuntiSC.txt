@@ -1,0 +1,9 @@
+13-11-2025	https://so.v2.cs.unibo.it/wiki/index.php/Il_%27%27catalogo%27%27_delle_System_Call 
+
+Il valore di ritorno delle systemcall è un intero(-1 se è un errore). Come capiamo però quale errore è avvenuto?
+Nei manuali troviamo la sezione RETURN VALUE che caso per caso spiega che errore è avvenuto. 
+Posso usare la libreria errno.h e stampare errno(int) per vedere qual è l'errore specifico. Verrà ritornato un intero che
+corrisponderà ad un errore specifico. 
+Per molte operazioni che usiamo da shell(EG: mkdir, rm, ecc..) ci sono delle corrispondenti systemcall.
+Trovi al link https://so.v2.cs.unibo.it/wiki/index.php/Syscall_per_file_system:_equivalenza_comandi le systemcall corrispondenti.
+
