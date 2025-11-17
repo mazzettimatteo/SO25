@@ -6,6 +6,9 @@
 
 //systemcall: lstat
 
+
+/*esercizio completo in 15--11-2025/LSTAT/lstat.c !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+
 int main(int argc, char *argv[]){//esegui con ./es3 file.txt per vedere le stat di file.txt	
 	struct stat buf;
 
@@ -21,11 +24,7 @@ int main(int argc, char *argv[]){//esegui con ./es3 file.txt per vedere le stat 
 
 	switch(buf.st_mode & S_IFMT)
 		case S_IFBLK: printf("");
-		/*
-
-........................
-
-*/ 
+		/*...*/ 
 	
 	
 
