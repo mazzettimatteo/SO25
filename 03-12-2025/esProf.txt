@@ -1,0 +1,43 @@
+Dato msg passing async a msg passing COMPLETAMENTE async
+
+void casend(msg_t msg, pid_t dest)
+	asend(<getpid(),msg>, dest)
+
+msg_t nonBlockingRecive(pid_t sender)
+	asend(<getpid(),TAG>, getpid())	//mando un messaggio TAG a me stesso
+	while(true)
+		<snd,msg>=arcv(ANY)
+		if(snd==getpid() && msg==TAG)
+			break
+		db.add(snd, msg)
+	return db.get(sender)	//se non c'è restituisce NONE
+
+Dato msg passsssing async implementare msg passing async LIFO
+
+void casend(msg_t msg, pid_t dest):
+    asend(<getpid(), msg>, dest)
+
+void nbreceive(pid_t sender):
+    asend(<getpid(), TAG>, getpid())
+    while true:
+        <snd, msg> = arecv(ANY)
+        if (snd == getpid() && msg == TAG):
+            break;
+        db.add(snd. msg)
+    return db.get(sender) --- se non c'e' restituisce NONE
+    
+    
+void lifosend(msg_t msg, pid_t dest):
+    asend(<getpid(), msg>, dest)
+
+msg_t liforeceive(pid_t sender):
+    asend(<getpid(), TAG>, getpid())
+    while true:
+        <snd, msg> = arecv(ANY)
+        if (snd == getpid() && msg == TAG):
+            break;
+        db.add(snd. msg)
+    while (msg = db.get(sender)) == NONE:  //get prende l'ultimo
+        <snd, msg> = arecv(ANY)
+        db.add(snd. msg)
+    return msg

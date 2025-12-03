@@ -1,0 +1,46 @@
+Scrivere il monitor minlenbb che fornisce le seguenti procedure entry:
+void minlenbb.add(objtype obj)
+objtype minlenbb.get(int bufnum)
+Il monitor gestisce N buffer ognuno dei quali contiene NELEM elementi.
+La funzione add inserisce obj come elemento nel buffer che contiene meno elementi. In caso più buffer abbiano lo
+stesso numero minimo di elementi viene scelto il buffer di indice minore.
+La funzione get prende un elemento dal buffer di indice bufnum
+
+Motivi d'attesa:	può essere bloccante solo se il buffer x (a cui faccio la get) è vuoto -> n condizioni
+						l'add è bloccante se tutti i buffer hanno tutti NELEM elementi -> n+1 condizioni
+
+
+monitor minlenbb:
+q=array N of queue.........metodi queue=enqueue, dequeue, len
+int tot=0
+
+condition okToAdd			//tot<N*NELEM
+condition okToGet[N]		//q[n].len()>0
+
+p.e. add(obj)	//n al posto di obj???
+	if(tot>=N*NELEM)
+		okToAdd.wait()
+	n=minIndex(q)	//descrivere cosa fa a parole
+	q[n].enqueue(obj)
+	tot++
+	okToGet[n].signal()
+
+p.e. get(n)
+	if(q[n].len==0)
+		okToGet[n].wait()
+	temp=q[n].dequeue()
+	tot--
+	okToAdd.signal()	
+	return temp
+
+
+se la prima coda ha 3 elem, la seconda 2 e la terza ne ha 4 si può inserire
+non si può inserire se tutte le code sono piene(hanno NELEM), quindi c'è l'uguale in if(tot>=N*NELEM)
+
+-------PASSATO REMOTO DI DEQUEUARE---------
+io dequeuai
+tu dequeuasti
+egli dequeuò
+noi dequeuammo
+voi dequeuaste
+essi dequeuarono
