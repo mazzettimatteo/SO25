@@ -1,0 +1,71 @@
+------------------------------------C2---------------------------
+Un servizio chiamato threshlocking ha le due seguenti funzioni di interfaccia:
+void threshlock(int level) //treshold lock
+void chthreshold(int newlevel)
+Il servizio mantiene il valore di soglia corrente: un numero intero, con valore iniziale zero.
+Se un processo chiama threshlock con parametro level maggiore o uguale alla soglia corrente viene bloccato,
+altrimenti no.
+La funzione chthreshold cambia il valore di soglia portandolo a newlevel. Tutti i processi in attesa che avevano
+specificato un parametro level minore di newlevel devono essere sbloccati.
+Implementare il servizio utilizzando semafori.
+
+semaphore mutex(1)
+semaphore tlock[](0) //semaforo d'attesa
+int nlock[]
+int thr=0 //threshold=soglia
+
+void threshlock(int level)
+	mutex.P()
+	if level>=thr
+		//deve bloccarsi, quindi devo rilasciare mutua esclusione
+		nlock[level]++
+		mutex.V()
+ 
+		tlock[level].P()
+		//ipotizziamo che c'è stata rilasciata la mutua esclusione
+		nlock[level]--
+		if nlock[level]>0
+			tlock[level].V()
+		else
+			mutex.V()
+	else
+		mutex.V()
+
+void chtreshold(int newlevel)
+	mutex.P()
+	for level=thr..newlevel
+		while nlock[level]>0
+			nlock[level]--
+			tlock[level].V()
+	thr=newlevel
+	mutex.V()
+
+
+Ho potuto non fare il passaggio del testimone perche la P è l'ultima istruzioni della funzione e le primitive dei semafori sono già protette da race condition.
+
+Sol alternativa che non abbia problemi di FIFOness: occorre assegnare una coda di semafori aggiuntivi ad ogni livello
+
+semaphore mutex(1)
+semaphore queue lq[] 
+int thr=0 //threshold=soglia
+
+void threshlock(int level)
+	mutex.P()
+	if level>=thr
+		semaphore s(0)
+		lq.add(s)
+		mutex.V()
+		s.P()
+	else
+		mutex.V()
+
+void chtreshold(int newlevel)
+	mutex.P()
+	for level=thr..newlevel
+		while lq[level].len>0
+			s=lq[level].get()
+			s.V()
+	thr=newlevel
+	mutex.V()
+
+Questa sol. è perfetta per il problema della FIFOness.
