@@ -23,7 +23,8 @@ lrwxrwxrwx 1 renzo renzo 8 Sep 10 15:43 sld -> ../file1
 il programma lanciato con parametro /tmp/test deve trovare che sl1, sl1bis, d/sld e d/gllsd indicano lo
 stesso file. (similmente dovrebbe rilevare altri insiemi di link simbolici che indicano lo stesso file)"""
 
-dirs=pathlib.Path("./testDir")
+#idea: uso parser sul comando ls -lR, se il primo char della riga è "l" allora è un link simbolico, considero solo quelli
 
-for item in dirs:
-    if(item.is_dir()==False):
+
+
+
