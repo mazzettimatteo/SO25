@@ -1,0 +1,104 @@
+--------------------------------------C1--------------------------------------------
+Per poter partire un passeggero di uno specifico volo esegue i passi seguenti:
+fila = volo.checkin() // al check-in viene attribuito il posto (il numero della fila va da 1 a 20,
+ // 5 posti per fila), se i posti sono esauriti si attende per fare checkin
+ // sul prossimo volo
+… va al gate
+volo.imbarco(fila) // il passeggero si può imbarcare quando consentito dal personale di terra
+… sali sull’aereo
+volo.a_bordo() // il passeggero è a bordo.
+Mentre il personale di terra quando l’aereo è al gate, volendo imbarcare i passeggeri dal fondo esegue il seguente
+codice:
+for (i = 20; i > 0; i--)
+ volo.chiama(i) //tutti i passeggeri delle file >= i possono imbarcarsi
+ … attendi
+volo.imbarco_completo() // la funzione attende il completamento dell’imbarco: l’aereo puo’
+ partire solo quando tutti i passeggeri passati al checkin sono a bordo
+Scrivere il monitor volo.
+
+Monitor volo{
+
+int contCheckin; int currFila; int onBoard
+condition ok2checkin //contCheckin<100
+condition ok2embark[20]
+condition ok2leave
+
+p.e. int checkin()
+	int fila
+	if contCheckin>=100
+		ok2checkin.wait()
+	fila=((contCheckin++)/5)+1
+	if contCheckin<100
+		ok2checkin.signal()
+
+p.e. void imbarco(int fila)
+	//se il passeggero che fa l'imbarco è di una fila gia chiamata
+	if fila<currFila
+		ok2embark[fila].wait()
+	ok2embark[fila].signal()
+
+p.e. void a_bordo()
+	onBoard++
+	if onBoard == contCheckin
+		ok2leave.signal()
+
+p.e. void chiama(int fila)
+	currFila=fila
+	ok2embark[fila].signal()
+
+p.e. void imbarco_completo()
+	if onboard<contCheckin
+		ok2leave.wait()
+	contCheckin=0
+	ok2checkin.signal()
+
+}
+Si guarda se si può fare l'operazione(non si può fare quando 100 hanno fatto checkin). Siccome quando l'aereo parte, poniamo che 150 abbiano fatto ok2checkin: 50 in attesa, quando arriva il prox volo devo sbloccare gli altri 50 che non sono partiti.
+Dopo il cambiamento di stato bisogna ricontrollare se si può fare la signal.
+Quando l'aereo parte dichiara che nessuno è più a bordo del nuovo aereo disponibile e sveglia quelli in attesi per quell'aereo.
+L'imbarco deve svegliare quelli in attesa per una fila.
+Se la mia fila è minore di quella ultima chiamata devo aspettare.
+Se 4 o 5 arrivano in anticipo e sono della stessa fila, il primo deve svegliare il secondo, il terzo ecc..
+La a_bordo non importa che fila sono i passeggeri: controllo solo che quelli a bordo sono numero uguale a quelli che hanno fatto checkin, altrimenti non fa la signal. 
+La imbarco_completo: se quelli a bordo sono minori rispetto a quelli passatia al checkin deve aspettare. ATTENZIONE: una wait senza controllo qui sarebbe sbagliata.
+
+-----------------------------------------------C2--------------------------------------------------
+Un servizio di message passing asincrono limitato consente di spedire messaggi che contengono un
+indentificativo di processo, una flag booleana e un corpo del messaggio di lunghezza <= 1500 byte.
+lsend(<pid, flag, body>, dest) // spedisce un messaggio a dest; len(body) <= 1500
+<pid, flag, body> = lrecv(sender) // riceve (FIFO) un messaggio da sender (può essere ANY).
+Scrivere un servizio di message passing asincrono standard facendo uso di lsend, lrecv.
+
+Idea: uso la flag per capire se devono arrivare altri pacchetti o se questo è l'ultimo, ultimo messaggio=>flag accesa
+Il ricevente mette i messaggi che arrivano in una struttura dati e li rende disponibili solo quando è arrivato l'ultimo pezzo
+
+void asend(msg_t msg,pid_t dest)
+	flag bool
+	for chunk in msg.split(1500) //prendi il messaggio e suddividilo in frammenti(chunk)
+		flag=chunk.len()<1500		//cambia la flag del messaggio solo se è l'ultimo
+		lsend(<getpid(),flag,chunk>, dest)
+
+
+msg_t arecv(pid_t sender)
+	msg_t msg
+	while true
+		msg=db.get(sender)
+		if msg!=NONE
+			return msg
+		<snd, flag, chunk>=lrecv(ANY)
+		db.add(snd,flag,chunk)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

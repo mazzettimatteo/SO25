@@ -1,0 +1,41 @@
+Esercizio c.1: Il monitor count bounded buffer (cbb) gestisce un buffer limitato di MAX elementi.
+cbb ha due procedure entry:
+void write(obj_t el)
+int remove(obj_t el)
+La funzione write inserisce un elemento nel buffer. Se vi sono già MAX elementi i processi che chiamano la funzione
+write devono attendere in ordine FIFO.
+La funzione remove deve eliminare dal buffer tutti gli elementi di valore uguale al parametro el presenti nel buffer al
+momento della chiamata. Il valore di ritorno rappresenta il numero di elementi cancellati dal buffer. Se non vi sono
+elementi restituisce zero.
+
+casi d'attesa: 1 quando la write non può inserire perché i buffer sono pieni
+
+
+
+monitor cbb:
+condition okToWrite
+buf = new buffer of obj //buf.get(elem) prende elem per valore
+int cont=0
+
+p.e. write(el)
+	if(buf.len()>=MAX)
+		okToWrite.wait()
+	buf.add(el)
+	...........
+	
+p.e. remove(el)
+	while(buf.get(el)!= NONE)	
+		cont++
+	if(buf.len()<MAX)
+		okToWrite.signal()
+	return cont
+
+se però cont=2 abbiamo tolto 2 elem da buffer, quindi la remove attiva la scrittura(okToWrite.signal()). 
+Manca al posto di .............. questo: if(buf.len()<MAX) okToWrite.signal()
+Se invece per ognuno che tolgo faccio una signal, metti che tolo x e mi arriva un altro x, vado a cambiare lo stato.
+
+
+
+
+
+	

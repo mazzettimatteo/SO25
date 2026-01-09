@@ -1,0 +1,33 @@
+-----------------------------------------C2-----------------------------
+Dato un servizio di message passing asincrono, implementare (senza far uso di processi server) un servizio semisincrono che fornisce le seguenti funzioni:
+sssend(msg_t msg, pid_t dest)
+msg_t ssrecv(pid_t sender)
+Se ci sono meno di 7 messaggi inviati dal processo A al processo B tramite la chiamata sssend non ancora ricevuti da B
+tramite la ssrecv la chiamata sssend non è bloccante. Se ci sono 7 messaggi non ancora ricevuti la chiamata sssend è
+bloccante. Il parametro sender della funzione ssrecv è l'identificativo di un processo mittente; il caso ANY non è
+consentito
+
+E' come buffer distribuito: se il ricevente si ferma per un attimo e vengono mandati 7 messaggi la send diventa bloccante
+Richiediamo un ACK dal destinatario, così tengo conto dei messaggio che ho spediot che non gli sono ancora arrivati: se sono <7 continuo a mandare, se sono 7 mi fermo.
+
+int pending[] // vale 0 inizialmente
+int msgq[]
+sssend(msg_t msg, pid_t dest):
+    while pending[dest] >= 7:
+        m = arcv(sender)
+        if m == ACK: 
+            pending[sender]--
+        else:
+            msgq[sender].add(m)
+    asend(msg, dest)
+
+msg_t ssrecv(pid_t sender):
+    msg = msgq[sender].get()
+        if msg != None:
+        return msg
+    while True:
+    msg = arcv(sender)
+    if msg == ACK:
+        pending[sender]--
+    else:
+        return msg   

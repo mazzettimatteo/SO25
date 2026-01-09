@@ -11,7 +11,7 @@ int main(int argc, int * argv[]){ //esegui questo file con ./stat mettendo come 
 	int err=stat(argv[1],&buf); //riempio buf chiamando stat(char * path, struct stat buf), err=codice di uscita di stat()
 	if(err==-1){ //se stat ha fallito
 		perror("stat"); //stampa "stat: contenuto_di_errno"
-		exit(89); //termino process usando come codice di uscita 89
+		exit(89); //termino process usando come codice di uscita 89 
 	}
 	printf("nlink %d\n",buf.st_nlink); //stampa num link fisici al file
 	printf("uid %d\n",buf.st_uid); //stampa user ID del file
@@ -30,7 +30,7 @@ int main(int argc, int * argv[]){ //esegui questo file con ./stat mettendo come 
 		case S_IFCHR: printf("charachter device\n");			break;
 		case S_IFDIR: printf("directory\n");					break;
 		case S_IFIFO: printf("FIFO/pipe\n");					break;
-		case S_IFLNK: printf("symbolic link(soft)\n");		break;
+		case S_IFLNK: printf("symbolic link(soft)\n");		break; //non funziona perché appena vede sLink lavora sul file linkato e non sul link stesso
 		case S_IFREG: printf("regular file\n");				break;
 		case S_IFSOCK: printf("socket\n");						break;
 		default:		  printf("unknown \n");						break;

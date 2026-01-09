@@ -1,0 +1,127 @@
+Esercizio c.1: Il monitor "semaforo con timeout" semtimeout deve fornire tre procedure entry:
+void V(void)
+boolean P(unsigned int timeout)
+void tick(void)
+Vale l'invariante dei semafori generali. La funzione tick viene richiamata ad ogni millisecondo. Un processo messo in
+attesa a causa di una P attende al massimo il numero di millisecondi indicato nel parametro.
+Se un processo viene riattivato per timeout la P ritorna valore vero, altrimenti falso.
+Le operazioni V devono riattivare i processi in attesa in ordine FIFO.
+Scrivere semtimeout.
+
+
+
+
+
+
+monitor semtimeout {
+    int value;    // Valore del semaforo
+    QueueOfConditions q;    // Coda delle condizioni, una associata ad ogni processo in attesa
+    boolean signalReceived = false;        // Per decidere se l'operazione signal è stata effettuata da tick() oppure da V()
+
+    procedure entry void tick() {
+        /* Invia ad ogni processo in attesa (in modo non molto elegante, purtoppo, dato che per scorrere la coda rimuove e reinserisce gli elemnti ordinatamente)
+        un segnale di "clock": in questo modo si evita di contabilizzare i timer per ogni processo in attesa all'interno del monitor, però si è costretti ad effettuare
+        una specie di busy waiting dentro P()... Inoltre, occorre assumere che le istruzioni di questa procedura richiedano
+        meno di un millisecondo per essere eseguite (il che può non essere vero se ci sono molti processi in attesa).*/  
+        
+        int i = 0;
+        condition c;
+        while(i < q.size()) { // Non uso un ciclo for perché la dimensione di q può cambiare e così il numero di iterazioni  
+            c = q.dequeue();
+            c.signal();
+            if(c != NULL) { // c potrebbe essere stata deallocata se il timer associato è scaduto 
+                q.enqueue(c);
+            }
+            i++;
+        }    // Alla fine il front della coda è invariato   
+    }
+    
+    procedure entry void V() {
+        if(value == 0) {
+            signalReceived = true;
+            condition c = q.dequeue();
+            c.signal();            // Modalità FIFO/fair
+            signalReceived = false;    
+        }
+        else {
+            value++;
+        }
+    }
+
+    procedure entry boolean P(unsigned int timeout) {
+        if(value == 0) {
+            condition c = new condition();    // Allocata dinamicamente
+            q.enqueue(c);
+            while(!signalReceived && timeout > 0) { // ~ busy waiting (di dubbia validità) 
+                c.wait();
+                timeout--;
+            }
+            free(c);     // c = NULL;
+        }
+        else {
+            value--;
+        }
+        return (timeout == 0);         
+    }
+ 
+    semtimeout(int init) {
+        value = init;    
+    }
+
+}; 
+
+
+//Soluzione alternativa:
+
+monitor semtimeout {
+    int value;    // Valore del semaforo
+    DynArrayQueue q;    // Coda delle condizioni, iterabile come array dinamico
+    boolean signalReceived = false;
+
+    procedure entry void tick() {
+        iterator i = q.head;
+        condition c;
+        unsigned int timeout;
+        while(i != q.end) { 
+            <c, timeout> = *i;
+            if(timeout <= 1) {
+                c.signal();
+            }
+            else {
+                timeout--;
+            }
+            i = i->next;
+        }
+    }
+    
+    procedure entry void V() {
+        if(value == 0) {
+            signalReceived = true;
+            condition c = q.dequeue();
+            c.signal();    
+            signalReceived = false;    
+        }
+        else {
+            value++;
+        }
+    }
+
+    procedure entry boolean P(unsigned int timeout) {
+        if(value == 0) {
+            condition c = new condition();
+            iterator i = q.enqueue(<c, timeout>); // Puntatore all'elemento nella coda
+            c.wait();
+            q.remove(i);
+            free(c); 
+        }
+        else {
+            value--;
+        }
+        return (!signalReceived);         
+    }
+ 
+    semtimeout(int init) {
+        value = init;    
+    }
+
+}; 
