@@ -1,0 +1,39 @@
+Esercizio c.2: Un servizio chiamato threshlocking ha le due seguenti funzioni di interfaccia:
+void threshlock(int level)
+void chthreshold(int newlevel)
+Il servizio mantiene il valore di soglia corrente: un numero intero, con valore iniziale zero.
+Se un processo chiama threshlock con parametro level maggiore o uguale alla soglia corrente viene bloccato,
+altrimenti no.
+La funzione chthreshold cambia il valore di soglia portandolo a newlevel. Tutti i processi in attesa che avevano
+specificato un parametro level minore di newlevel devono essere sbloccati.
+Implementare il servizio utilizzando semafori.
+
+int currSoglia
+semaphore list s={0...0}
+semaphore mutex=1
+process list proc={-1...-1}    //memorizza livelli con cui i processi richiamano threshlock(...), altrimenti se la cella non è usata ci memorizza sopra -1
+
+void threshlock(int level){
+    mutex.P()
+    if(level>=currSoglia){  //se il processo che usa la funz ha level>=currSoglia
+        proc[PID]=level     //e memorizzo il livello con cui è entrato
+        mutex.V()
+        s[PID].P()          //lo metto in attesa
+        }
+    else{
+        mutex.V()
+    }
+}
+
+void chtreshold(int newlevel){
+    mutex.P()               //muta esclusione per cambiare la soglia
+    /*temp=currSoglia*/     //non dovrebbe servire
+    currSoglia=newlevel     //cambio la soglia
+    for each p in proc:     
+        if p<newlevel:      //per tutti i processi entrati con level<nuova soglia 
+            s[PID].V()      //li sblocco
+            proc[PID]=-1  
+    mutex.V()               //rilascio mutua esclusione
+
+
+}

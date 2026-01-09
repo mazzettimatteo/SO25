@@ -1,0 +1,48 @@
+Esercizio c.1: Scrivere il monitor minlenbb che fornisce le seguenti procedure entry:
+void minlenbb.add(objtype obj)
+objtype minlenbb.get(int bufnum)
+Il monitor gestisce N buffer ognuno dei quali contiene NELEM elementi.
+La funzione add inserisce obj come elemento nel buffer che contiene meno elementi. In caso più buffer abbiano lo
+stesso numero minimo di elementi viene scelto il buffer di indice minore.
+La funzione get prende un elemento dal buffer di indice bufnum
+
+
+
+monitor minlenbb:
+
+condition ok2insert                 //se c'è spazio per inserire nel sistema
+condition list ok2take[N]           //se nel buffer da cui fare la get c'è almeno un valore
+buffer list buffers[N]
+
+
+void minlenbb.add(objtype obj){
+    index=findBestBuffer()              //trovo indice del buffer con size minore
+    while(buffers[index].size==NELEM){  //se anche quello meno pieno è pieno al massimo
+        ok2insert.wait()                //attendo
+        index=findBestBuffer()          //se mi sblocco devo ricalcolare qual è l'indice del buffer con size minore 
+    }
+    buffers[index].insert(obj)          //inserisco nel buffer corretto
+    ok2take[index].signal()             //ora si può fare get al buffer in cui ho appena inserito l'elemento
+    
+}
+
+
+objtype minlenbb.get(int bufnum){
+    while(buffers[bufnum].size==0)      //se tutti i buffer sono vuoti allora non posso prendere nulla
+        ok2take[bufnum].wait() 
+    //qui posso prendere
+    retVal=buffers[bufnum].pop()        
+    buffers[bufnum].size--              //diminuisco la size del buffer perché ho fatto la pop 
+    ok2insert.signal()                  //in questo buffer ora si può inserire un nuovo elem
+
+    return retVal
+}
+
+int findBestBuffer(){                   //funzione ausiliaria non process entry del monitor
+    best=0
+    for i=1...N{
+        if(buffers[i].size < buffers[best].size)
+            best=i;
+    }
+    return best
+}
