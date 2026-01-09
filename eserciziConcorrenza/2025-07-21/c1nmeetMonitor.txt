@@ -1,0 +1,35 @@
+Esercizio c.1: Scrivere il monitor nmeet che ha una funzione di interfaccia:
+float nmeet(unsigned int n, float val)
+La funzione nmeet blocca il processo chiamante fino a quando n processi abbiano richiamato nmeet con parametro n.
+(es due processi che hanno chiamato la nmeet con n=3 rimangono bloccati, quando un terzo processo chiama nmeet
+con n=3, i tre processi continuano l'esecuzione.) Il valore di ritorno di nmeet e' la media dei valori 'val' passati dagli n
+processi che hanno sbloccato la chiamata nmeet.
+
+monitor nmeet:
+
+condition ok2go[] //se nell'indice x ci sono x processi in attesa
+float sum[]
+float avg[]
+int cont[]
+int inUscita[]
+
+p.e. float nmeet(unsigned int n, float val){
+    sum[n]+=val                 //aggiorno la somma per ogni processo nella cella corretta
+    cont[n]++                   //conto quanti processi sono entrati con lo stesso indice
+    if(cont[n]<n){              //se non n sono entratti abbastanza attendo
+        ok2go[n].wait()
+    }
+    else{                       //sono l'ultimo processo ad entrare prima del ritorno della media
+        avg[n]=sum[n]/n         //calcolo la media che tutti i processi dovranno ritornare
+        inUscita[n]=n           //dico che dovrò togliere n processi
+        ok2go[n].signal()       //posso iniziare a toglierli
+    }
+    result=avg[n]               //salvo il val di ritorno per tutti
+    inUscita[n]--               //ogni processo che esce abbassa il cuounter
+    if(inUscita[n]==0){         //se sono l'ultimo processo in uscita resetto tutto
+        avg[n]=0
+        cont[n]=0
+        sum[n]=0
+    }
+    return result
+}

@@ -1,0 +1,39 @@
+Esercizio c.2: Facendo uso di semafori scrivere una funzione syncvalue:
+int syncvalue(int key)
+la funzione syncvalue è sempre bloccante. Quando il valore del parametro key è diverso da quello della precedente
+chiamata il processo prima di bloccarsi riattiva tutti i processi in attesa. Il valore di ritorno è il numero di processi con lo
+stesso valore key sbloccati. Per esempio:
+P chiama syncvalue(42), si blocca.
+Q chiama syncvalue(42), si blocca.
+R chiama syncvalue(44) sblocca P e Q poi si blocca. Il valore di ritorno per P e Q è 2.
+T chiama syncvalue(46), sblocca R che ritorna 1 e si blocca.
+Q chiama syncvalue(46), si blocca.
+P chiama syncvalue(46), si blocca
+V chiama syncvalue(0), sblocca T, Q e P (valore di ritorno: 3) poi si blocca...
+
+
+
+currKey=-1
+semaphore mutex(1)
+semaphore sems[]
+process waitingList[]
+int retVals[]
+
+int syncvalue(int key){
+    mutex.P()
+    if(currKey!=key){               //se entra un processo con chiave diversa dalla precedente
+        int cont=waitingList.size() //ottengo numero di processi in attesa
+        for p in waitingList{       //sblocco tutti i precedenti
+            retVals[p]=cont         
+            sems[p].V()             
+        }
+        waitingList.clear()         
+        currKey=key                 //imposto nuova chiave
+    }
+    //se il processo ha la stessa chiave della prec o il processo è il primo con la nuova key
+    waitingList.insert(PID)         //metto in attesa il processo
+    mutex.V()                       
+    sems[PID].P()                   //vado in attesa
+
+    return retVals[PID]
+}

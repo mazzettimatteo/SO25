@@ -1,0 +1,62 @@
+Esercizio c.1: Scrivere il monitor urgentsem che implementi un servizio di semafori con supporto di P urgente.
+il monitor ha tre procedure entry e un costruttore:
+void init(int initvalue)
+void P(void)
+void UP(void)
+void V(void)
+Vale l'invariante initvalue + NV >= NP + NUP (dove NX indica il numero di processi che hanno completato l'operazione X).
+UP è una variante della P di tipo urgente. Quando rispettando l'invariante sia possibile scegliere fra un processo in attesa
+per una chiamata P e uno in attesa per UP questo ultimo deve essere riattivato. Fra processi in attesa per P così come fra
+processi in attesa per UP la riattivazione deve avvenire in ordine FIFO. 
+
+
+monitor urgentsem:
+
+int val
+int urgentWaiting=0
+int chillWaiting=0
+condition urgentCanGo         //val>0
+condition chillCanGo          //val>0
+
+void init(int initvalue){
+    val=initvalue               
+}
+
+void UP(){      
+    if(val>0){              //se il val>0 posso andare subito, non devo aspettare
+        val--
+    }
+    else{
+        urgentWaiting++     //c'è un nuovo processo in attesa
+        urgentCanGo.wait()  //il processo si mette in attesa
+    }
+}
+
+void P(){                   //analogo a UP ma per le chiamate non urgenti
+    if(val>0){
+        val--
+    }
+    else{
+        chillWaiting++
+        chillCanGo.wait()
+    }
+}
+
+void V(){
+    if(urgentWaiting>0){    //se ci sono delle chiamate urgenti sblocco la prima di quelle
+        urgentWaiting--
+        urgentCanGo.signal()
+    }
+    else if(chillWaiting>0){//altrimenti sblocco la prima non urgente
+        chillWaiting--
+        chillCanGo.signal()
+    }
+    else{                   //se non vi sono richieste allora aumento val così la prossima richiesta non verrà messa in coda
+        val++
+    }
+}
+
+/*
+Questo codice funziona perché le condition sono dati particolari che contengono già al loro interno il concetto di coda FIFO e quindi non devo gestire io quella parte;
+le variabili che urgent/chillWaiting invece servono a me per sapere se dentro le code implicite delle condition c'è qualche processo oppure no
+*/
