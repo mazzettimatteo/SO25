@@ -1,0 +1,37 @@
+Esercizio c.1: Scrivere il monitor fullbuf che abbia le seguenti procedure entry:
+void add(int value)
+int get(void)
+Le prime MAX chiamate della procedure entry add devono bloccare i processi chiamanti. In seguito deve sempre valere
+Na >= MAX indicando con Na il numero di processi bloccati in attesa di completare la funzione add.
+La funzione get deve attendere che Na > MAX, restituire la somma algebrica dei parametri value delle chiamate add in
+sospeso e riattivare il primo processo in attesa di completare la add (se la get richiede che Na > MAX, la get può
+riattivare un processo e al completamento della get si rimarrà garantito che Na >= MAX)
+
+monitor fullbuf:
+
+int MAX
+int Na=0             //number of adder
+condition ok2add //nWaiting>MAX
+condition ok2get //
+int sum=0
+
+
+void add(int value){
+    Na++            //un nuovo adder
+    sum+=value      
+    if(Na>MAX){     //se ci sono troppi non posso fare la get e vado in attesa
+        ok2get.wait()
+    }
+    ok2add.wait()   //aggiungo un adder in attesa
+    Na--            //finita l'attesa lo tolgo
+    sum-=value
+}
+
+int get(void){
+    while(Na<=MAX){ //se il numero di adder non è massimo attendo
+        ok2get.wait()
+    }
+    int result=sum  //il numero di adder è MAX quindi salvo il risultato della somma
+    ok2add.signal() //sblocco il primo adder
+    return result   //ritorno il risultato
+}

@@ -1,0 +1,39 @@
+Esercizio c.2: Usando i semafori implementare un servizio che preveda due funzioni:
+ void sumstop(int v)
+ int sumgo(void)
+La funzione sumstop deve mettere il processo chiamante in attesa.
+La funzione sumgo deve sbloccare tutti i processi messi in attesa con la sumstop e restituire la somma algebrica dei
+valori passati come parametro alla sumstop dai processi che sono stati sbloccati (zero se la sumgo viene richiamate
+quando non c'è nessun processo bloccato).
+
+
+semaphore mutex=1
+semaphore sems[]={0...0}
+process procs[]={}
+int sum=0
+
+
+void sumstop(int v){
+    mutex.P()           //mutua esclusione perché devo accedere a sum
+    sum+=v              //aggiorno sum
+    procs.append(PID)   //mi segno quale processo ha chiamato questa funzione
+    mutex.V() 
+    sems[PID].P()       //e lo metto in attesa
+    
+}
+
+int sumgo(){
+    mutex.P()           //mutua esclusione per salvarmi localmente sum
+    if(procs.isEmpty()){
+        mutex.V()
+        return 0
+    }
+    result=sum
+    sum=0               //resetto sum
+    for each p in procs{
+        sems[p].V()     //sblocco tutti i processi in attesa
+    }
+    procs.clear()
+    mutex.V()
+    return result       
+}

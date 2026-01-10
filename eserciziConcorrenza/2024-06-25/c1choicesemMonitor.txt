@@ -1,0 +1,44 @@
+Esercizio c.1: Scrivere il monitor choicesem che implementa un semaforo con scelta che ha le seguenti procedure entry:
+void P(void)
+void V(int n)
+Il semaforo con scelta soddisfa l'invariante dei semafori(NP<=NV+INIT) ma i processi non vengono riattivati in ordine FIFO.
+La funzione V se vi sono in attesa al più n processi riattiva il primo altrimenti viene riattivato quello in posizione n + 1 nella
+sequenza di attesa.
+es. se ci sono in attesa i processi A, B e C, la funzione V(0) attiverebbe A, V(1) attiverebbe B, V(2) attiverebbe C, per tutti i
+valori del parametro maggiori di 2 verrebbe riattivato A.
+
+
+
+monitor choicesem:
+
+int val
+int nWaiting=0
+condition calledP[]
+queue waiting[]
+
+void P(void){
+    if(val<=0){
+        waiting.enqueue(PID)
+        calledP[PID].wait()
+    }
+    else{           //val>0 posso già andare, non mi metto in attesa
+        val--
+    }
+}
+
+void V(int n){
+    if(waiting.size>0){
+        if(waiting.size<n){    //rimuovo il primo
+            firstProc=waiting.dequeue()
+            calledP[firstProc].signal()
+        }
+        else{
+            procX=waiting.get(n)
+            waiting.remove(procX)
+            calledP[procX].signal()
+        }
+    }
+    else{
+        val++
+    }
+}

@@ -1,0 +1,45 @@
+Esercizio c.1: I bit di un numero intero rappresentano condizioni di un sistema. Se lo stato attuale è 6 (0110) vuole dire
+che attualmente sono vere le condizioni 2 (0010) e 4 (0100).
+Scrivere un monitor bitcond che fornisca le seguenti procedure entry:
+void set(int bit2set); accende nello stato attuale i bit di bit2set
+void unset(int bit2unset) spegne nello stato attuale i bit di bit2unset
+void statuswait(int bit2wait) attende che lo stato attuale soddisfi tutti le condizioni indicate in bit2wait (cioè
+che tutti i bit in bit2wait siano accesi nello stato attuale).
+Le richieste statuswait devono essere servite in ordine FIFO (cioè un processo anche se sono presenti tutte le
+condizioni necessarie deve attendere se un processo che ha chiamato statuswait prima è in attesa).
+Lo stato iniziale è zero (nessuna risorsa disponibile)
+
+
+monitor bitcond:
+
+int currState=0         //max=15
+condition ok2release[]    //bit2wait==currState&bit2wait
+<process,mask> q[]
+
+
+void set(int bit2set){
+    currState=currState|bit2set
+    checkAndGoFirst()
+}
+
+void unset(int bit2unset){
+    currState=currState&~bit2unset
+}
+
+void statuswait(int bit2wait){
+    q.enqueue(PID,bit2wait)
+    while(q.head().first!=PID || currState&bit2wait!=bit2wait){    //non attendo solo se sono primo e mask pronta  
+        ok2release[PID].wait()
+    }//qui pimo && maskPronta
+    q.dequeue()
+    checkAndGoFirst()
+}
+
+void checkAndGoFirst(){
+    if(!q.isEmpty()){
+        topReq=q.head()
+    }
+    if(currState&topReq.second == topReq.second){
+        ok2release[topReq.first].signal()
+    }
+}
