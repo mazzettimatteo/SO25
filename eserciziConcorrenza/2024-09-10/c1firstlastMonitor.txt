@@ -1,0 +1,51 @@
+Esercizio c.1: Implementare il monitor firstlast che ha 3 procedure entry:
+void addfirst(int val);
+void addlast(int val);
+int getboth(void);
+Quando un processo chiama la procedure entry getboth deve attendere che ci sia almeno un processo che ha
+chiamato la addfirst e uno che ha chiamato la addlast. La funzione getboth deve sbloccare il primo processo fra
+quelli in attesa per aver chiamato addfirst e l'ultimo fra quelli in attesa per aver chiamato addlast. Il valore di ritorno
+della getboth è la somma dei parametri passati alla addfirst e addlast dai processi sbloccati.
+I processi che chiamano la addfirst o la addlast devono attendere di essere riattivati da una chiamata getboth
+
+monitor firstlast:
+
+condition ok2get
+int queue valPrimi[]
+int stack valUltimi[]
+condition ok2goFirst
+condition list ok2goLast[]
+pid_t stack procsUltimi[]
+
+void addfirst(int val){
+    valPrimi.enqueue(val)
+    if(!valUltimi.isEmpty()){
+        ok2get.signal()
+    }
+    ok2goFirst.wait()
+}
+
+void addlast(int val){
+    valUltimi.enqueue(val)
+    if(!valPrimi.isEmpty()){
+        ok2get.signal()
+    }
+    procsUltimi.push(getpid())
+    ok2golast[getpid()].wait()
+}
+
+
+int getboth(){
+    while(valPrimi.isEmpty() || valUltimi.isEmpty()){
+        ok2get.wait()
+    }
+    primoVal=valPrimi.dequeue()
+    ultimoVal=valUltimi.pop()
+    sum=primoVal+ultimoVal
+
+    ok2goFirst.signal()
+    ultimoProc=procsUltimi.pop()
+    ok2goLast[ultimoProc].signal()
+
+    return sum
+}

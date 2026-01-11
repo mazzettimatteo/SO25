@@ -1,0 +1,60 @@
+Esercizio c.2: Sia dato un servizio di message passing asincrono. Implementare senza fare uso di processi server un
+servizio di message passing col segno sincrono mpss che fornisce le due seguenti funzioni:
+void mpsssend(msg_t msg, pid_t destination)
+msg_t mpssrecv(pid_t sender, int num)
+Il parametro num della funzione di ricezione indica con il segno se la chiamata e' bloccante o meno (numer
+positivo=chiamata bloccante, numero negativo=chiamata non bloccante). Il valore assoluto indica il numero d'ordine
+fra i messaggi in attesa di essere ricevuti. Ad esempio se num=3 la chiamata mpssrecv restituisce il terzo messaggio in
+attesa se vi sono almeno tre messaggi in attesa di essere consegnati dal mittente indicato, altrimenti attende che
+arrivi il terzo messaggio. Se num=-2 la funzione mpssrecv retituisce NULL se non vi sono almeno due messaggi in
+attesa di esser consegnati dal mittente specificato, altrimenti restituisce il secondo
+
+
+struct Packet=<int type, msg_t content, pid_t sourcePID>
+
+<Packet> list  senderBuf
+
+void mpsssend(msg_t msg, pid_t destination){
+    Packet packToSend={DATA,msg,myPID}
+    asend(packToSend,destination)           //invio pacco a destination in cui specifico che sono dati(DATA), il messaggio, chi sta inviando
+    bool ACKrecived=false
+    Packet packIncoming
+    while(!ACKrecived){                     //se non ho ricevuto l'ACK dal destinatario mi devo bloccare
+        if(senderBuf.containsACK(destination)){//guardo se mi è già arrivato e l'ho già memorizzato 
+            senderBuf.removeACK(destination)
+            ACKrecived=true
+        }
+        else{
+            packIncoming=arecieve(ANY)       //mi metto in salcolto per pacchetti
+            if(packIncoming[2]==destination && packIncoming[0]==ACK){     //mi è arrivato adesso l'ACK giusto
+                ACKrecived=true     
+            }
+            else{
+                senderBuf.add(packIncoming)   //memorizzo gli altri messaggi(diversi dall'ACK del destinatario) nel buffer
+            }
+        }
+    }
+}
+
+
+<Packet> list  recieverBuf
+
+msg_t mpssrecv(pid_t sender, int num){
+    Packet packIncoming
+    targetIdx=abs(num)
+    bool bloccante = (num>0)
+    while(recieverBuf.msgFrom(sender)<targetIdx){   //se nel buffer non ho abbastanza(|num|) messaggi del sender devo attendere
+        if(!bloccante){
+            return NULL                             //se non è bloccante restituisco NULL come da consegna
+        }
+        else{
+            packIncoming=arecieve(ANY)              //se è bloccante mi metto in ricezione
+            recieverBuf.add(packIncoming)           //e memorizzo i pacchetti in arrivo
+        }
+    }
+    //qui ho sicuramente memorizzato il pacchetto numero |num|
+    Packet targetPack=recieverBuf.get(sender,targetIdx) //prendo quel pacchetto
+    Packet pACK={ACK,,myPID}        
+    asend(pACK,sender)              //invio un ACK al mittente
+    return targetPack[1]
+}
