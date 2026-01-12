@@ -1,0 +1,56 @@
+Esercizio c.1: Il monitor AB gestisce l'accodamento limitato di due tipi di dati A e B. Il monitor prevede 3 procedure entry:
+void AB.add2a(int a0, int a1)
+void AB.addb(int b0)
+void AB.geta2b(int *a0, int *b0, int *b1).
+add2a aggiunge 2 elementi di tipo A, addb aggiunge un elemento di tipo B, geta2b restituisce un elemento di tipo A e
+due di tipo B.
+Il monitor può memorizzare al massimo MAX elementi di tipo A e MAX di tipo B. (MAX >= 2).
+Se non sono disponibili almeno un elemento di tipo A e due di tipo B la funzione geta2b deve attendere.
+Gli elementi devono essere restituiti in ordine FIFO così come le richieste pendenti per geta2b devono essere esaudite in
+ordine FIFO.
+
+monitor AB:
+
+int list A[MAX]
+int list B[MAX]
+
+condition ok2addA
+condition ok2addB
+condition ok2get
+
+void add2a(int a0, int a1){
+    if(A.size()>=MAX-1){    //non c'è spazio per inserire sia a0 che a1
+        ok2addA.wait()
+    }
+    //qui posso sicuramente aggiungere
+    A.insert(a0)
+    A.insert(a1)
+    if(A.size()>=1 && B.size()>=2){     //se riempiendo A adesso ho abbastanza dati per fare la get
+        ok2get.signal()
+    }
+}
+
+void addb(int b0){          //analogo(quasi) ad add2a
+    if(B.size()>=MAX){
+        ok2addB.wait()
+    }
+    B.insert(b0)
+    if(A.size()>=1 && B.size()>=2){
+        ok2get.signal()
+    }
+}
+
+void geta2b(int *a0, int *b0, int *b1){
+    if(A.size()<1 || B.size()<2){       //se non ho abbastanza elem per fare la get allora attendo
+        ok2get.wait()
+    }
+    *a0=A.remove()
+    *b0=B.remove()
+    *b1=B.remove()
+    if(A.size()<MAX-1){         //se c'è spazio nel buffer allora gli altri procs potranno fare add2a 
+        ok2addA.signal()
+    }
+    if(B.size()<MAX){           //come l'if precedente
+        ok2addB.signal()
+    }
+}

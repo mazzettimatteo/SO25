@@ -1,0 +1,45 @@
+Esercizio c.1: Scrivere il monitor rgbsum che fornisce una procedure entry:
+#define red 0
+#define green 1
+#define blue 2
+double rgb(int color, double value)
+I processi che usano il monitor rgbsum devono sommare i valori delle sequenze di chiamate dello stesso colore (red,
+green o blue). La funzione rgb è sempre bloccante. Solo quando una sequenza di chiamate dello stesso colore viene
+interrotta da una chiamata di colore diverso tutti i processi in attesa vengono sbloccati e rgb restituisce la somma dei
+parametri 'value'.
+Esempio: Il processo P chiama rgb(red, 2) -> si blocca. il processo Q chiama rgb(red, 4) ->si blocca. Il processo R chiama
+rgb(blue, 1) sblocca i due processi P e Q che hanno chiamato rgb con parametro red, ad entrambi rgb ritorna il valore 6
+(2 + 4). poi R si blocca. se ora un altro processo T chiama rgb(green, 39) il processo R continua e rgb ritorna 1 mentre R si
+ferma. Ora i processi W,X,Y chiamano tutti rgb(green, 1) bloccandosi. Il processo Z chiamando rgb(red, 0) sblocca R,W,X,Y,
+rgb restituisce a questi processi il valore 42 e Z si ferma.
+
+monitor rgbsum:
+
+condition ok2add
+
+int currCol=999
+int nWaiting=0
+double sum=0
+
+
+double rgb(int color, double value){
+    if(color==currCol){             //se il colore è come il precedente
+        sum+=value
+        nWaiting++                  
+        ok2add.wait()     //vado in attesa (!!!)
+        result=sum         
+    }
+    else{                       //se è diverso dai precedenti
+        for i=0..nWaiting{      //sblocco tutti i precedenti, oppure, al posto di questo for posso mettere un ok2add.signal() nella 
+                                //riga dopo (!!!) così, ognuno dei procs che si sblocca riattiva il successivo
+            ok2add.signal()
+        }
+        nWaiting=0             
+        currCol=color
+        ok2add.wait()
+        sum=value
+        result=sum
+    }
+    
+    return result
+}

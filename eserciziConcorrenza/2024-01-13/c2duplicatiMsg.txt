@@ -1,0 +1,26 @@
+Esercizio c.2: Sia dato un sistema di message passing asincrono con duplicazione dei messaggi.
+dsnd(msg_t msg, pid_t dest)
+msg_t drecv(pid_t sender)
+I messaggi spediti con dsend verranno sicuramente ricevuti almeno una volta ma possono essere ricevuti più volte. È
+garantita la consegna FIFO.
+Implementare un sistema di message passing asincrono (classico). (non fare uso di processi server).
+
+void asend(msg_t msg, pid_t dest){
+    dsnd(<msg,getpid()>,dest)
+}
+
+
+database db[]
+msg_t arecv(pid_t snd){
+    msg_t incoming
+    while((incoming=drecv(ANY))!=NULL){
+        db.insert(incoming)
+        if(db.msgFrom(snd)>0) break;
+    }
+    if(incoming==NULL) return NULL
+    db.removeDups()
+    result=db.getMsg(snd)
+    db.remove(result)
+    return result
+}
+
