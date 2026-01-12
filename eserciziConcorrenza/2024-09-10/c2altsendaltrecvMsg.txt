@@ -1,0 +1,57 @@
+Esercizio c.2: Dato un servizio di message passing asincrono scrivere un servizio di message passing asincrono
+alternato (senza fare uso di processi server).
+void altsend(msg_t msg, pid_t destination)
+msg_t altrecv(pid_t sender)
+La prima chiamata di altrecv deve restituire il primo messaggio fra quelli in attesa (spediti dal mittente sender o da
+qualsiasi processo se sender==ANY). La seconda chiamata di altrecv deve restituire l'ultimo fra i messaggi in attesa, la
+terza chiamata deve restituire il primo, la quarta chiamata l'ultimo e così via.
+
+struct Packet: <type,msg_t,sender> 
+
+
+void altsend(msg_t msg, pid_t destination){
+    Packet p={DATA,msg,getpid()}
+    asend(p, destination)
+}
+
+
+
+int cont=0
+Packet buffer buf[]
+
+msg_t altrecv(pid_t sender){
+    cont++              
+    Packet incoming
+    while(true){
+        incoming=arecv(ANY)
+        if(incoming.type="DATA"){
+            buf.enqueue(incoming)
+        }
+        else{
+            break;
+        }
+    }
+    while(buf.msgFrom(sender)==0){
+        incoming=arecv(ANY)
+        buf.enqueue(incoming)
+        asend(MARKER, getpid())
+        while(true){
+            Packet extra=arecv(ANY)
+            if(extra.type==MARKER){
+                break;
+            }
+            else{
+                buf.enqueue(extra)
+            }
+        }
+    }
+    Packet selected
+    if(cont%2!=0){
+        selected=buf.getFirstFrom(sender)
+    }
+    else{
+        selected=buf.getLastFrom(sender)
+    }
+    return selected.msg    
+    
+}

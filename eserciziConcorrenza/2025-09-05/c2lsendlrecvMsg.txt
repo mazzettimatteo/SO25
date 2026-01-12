@@ -1,0 +1,34 @@
+Esercizio c.2: Un servizio di message passing asincrono limitato consente di spedire messaggi che contengono un
+indentificativo di processo, una flag booleana e un corpo del messaggio di lunghezza <= 1500 byte.
+lsend(<pid, flag, body>, dest) // spedisce un messaggio a dest; len(body) <= 1500
+<pid, flag, body> = lrecv(sender) // riceve (FIFO) un messaggio da sender (può essere ANY).
+Scrivere un servizio di message passing asincrono standard facendo uso di lsend, lrecv
+
+asend(msg_t msg, pid_t dest){
+    bool finito=0
+    for fragment in msg.split(1500){
+        lsend(<getpid(),finito,fragment>,dest)
+    }
+    bool finito=true
+    lsend(<getpid(),finito,NULL>,dest)
+
+}
+
+msg_t list[]
+
+arecv(pid_t sender){
+    if(list[sender].hasEOL()){              //se è già finito ritorno subito
+        return list[sender].removeEOL()
+    }
+    while(true){
+        if(finito==0) list[snd].concat(fragment)    //se non è finito li concateno
+        else list[snd].concat("EOL")                //se è l'ultio metto il terminatore di linea EOL
+        if(snd==sender && list[sender].hasEOL()) break; //se il pacchetto appena arrivato completa il messaggio esco; questo "snd==sender" serve se sender:=ANY
+        if(sender==ANY && list[snd].hasEOL()){     //se mi è arrivato un messaggio che completa da qualsiasi persona(param iniziale sender:=ANY) allora devo uscire
+            sender=snd
+            break;
+        }
+    }
+    
+    return list[sender].removeEOL()
+}
