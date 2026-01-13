@@ -1,0 +1,43 @@
+Dato un servizio di message passing asincrono costruire un servizio di message passing completamente
+asincrono a liste che abbia due metodi:
+nbl_send(msg_t m, pid_t dest)
+list of msg_t nbl_receive(pid_t sender)
+La chiamata nbl_receive deve restituire la lista di tutti i messaggi
+ricevuti dal mittente specificato (sender) o la lista di
+tutti i messaggi ricevuti se sender è -1 (ANY).
+Il servizio è completamente asincrono perché se non vi sono messaggi
+che soddisfano la condizione richiesta
+nbl_receive restituisce una lista vuota senza attendere.
+
+nbl_send(msg_t m, pid_t dest){
+    asend(<m,getpid()>,dest)
+}
+
+
+database db[]
+
+msg_t[] nbl_receive(pid_t sender){
+    asend(<TAG,getpid()>,getpid())
+    while(true){
+        <snd,msg>=arecv(ANY)
+        if(snd==getpid() && msg==TAG){ 
+            break;
+        }
+        db.insert(snd,msg)
+    }
+    fullList=[]
+    if(sender!=ANY){
+        for msg in db.from(snd){
+            fullList.append(msg)
+        }
+    }
+    else{
+        for s in db.allSenders(){
+            for msg in db.from(s){
+                fullList.append(msg)
+            }
+        }
+    }
+    return fullList
+}
+

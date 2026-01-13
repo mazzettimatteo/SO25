@@ -1,0 +1,13 @@
+dato msgpass asincrono -> msg passing completamente asincrono
+
+void casend(msg_t msg, pid_t dest):
+    asend(<getpid(), msg>, dest)
+
+msg_t nbreceive(pid_t sender):
+    asend(<getpid(), TAG>, getpid())    
+    while true:
+        <snd, msg> = arecv(ANY)
+        if (snd == getpid() && msg == TAG):
+            break;
+        db.add(snd. msg)
+    return db.get(sender) --- se non c'e' restituisce NONE

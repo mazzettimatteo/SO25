@@ -1,0 +1,43 @@
+Esercizio c.2: Un servizio di message passing universale supporta tutti i modelli di message passing: sincrono, asincrono
+e completamente asincrono. Il funzionamento può essere deciso ad ogni spedizione o ricezione. La API prevede due
+funzioni:
+void usend(bool blocking, msg_t msg, pid_t dest)
+msg_t urecv(bool blocking, pid_t sender)
+le funzioni sono bloccanti o meno a seconda del valore del parametro blocking.
+Dato un servizio di message passing asincrono scrivere un servizio di message passing universale senza fare uso di
+processi server;.
+
+void usend(bool blocking, msg_t msg, pid_t dest){
+    if(!blocking) asend(<msg,getpid()>, dest)
+    else{
+        asend(<msg,getpid()>, dest)
+        ACK=arecv(dest)
+    }
+}
+
+
+local buffer
+msg_t urecv(bool blocking, pid_t sender){
+    if(blocking){
+        <msg_t,pid_t> incoming=arecv(sender)
+        asend(ACK,incoming.snd)
+        return incoming.msg
+    }
+    else{                               //recv non bloccante
+        asend(<TAG,sender>,getpid())    //invio un messaggio a me stesso
+        <msg_t,pid_t> incoming=arecv(sender)    
+        if(incoming.snd==getpid() && incoming.msg==TAG){    //se il messaggio che mi arriva è il mio 
+            return NULL                                     //allora non mi sono arrivati messaggi
+        }
+        else{
+            return incoming.msg                             //altrimenti restituisco il primo messsaggio arrivato
+        }
+    }
+}
+
+
+/////////////////////////////////////
+asend(<msg,getpid()>,dst)
+<msg_t,pid_t> incoming=arecv(snd)
+incoming.msg:=campo msg_t
+incoming.snd:=campo pid_t

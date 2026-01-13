@@ -1,0 +1,57 @@
+Esercizio c.1: Scrivere il monitor rb (redblack) con due procedure entry:
+float meanblack(float v)
+float meanred(float v)
+Esistono due tipi di processo, neri e rossi. I processi neri chiamano la funzione meanblack mentre i processi rossi
+chiamano meanred.
+Entrambe le funzioni restituiscono la media dei valori passati da una chiamata di meanblack e una di meanred.
+Per fare il calcolo ogni chiamata di un processo rosso (meanred) deve sincronizzarsi con una chiamata di un processo
+nero (meanblack) e viceversa. Se la prima chiamata è una meanblack il processo chiamante attende, quando
+successivamente un processo rosso chiama meanred entrambi i processi si sbloccano ed entrambe le funzioni devono
+restituire lo stesso valore (la media dei valori del parametro v). Se non arrivano chiamate di meanred i processi neri che
+chiamano meanblack devono attendere in ordine FIFO. Lo stesso vale anche per i processi meanred fino ad una
+chiamata di meanblack.
+Il monitor rb deve usare una sola variabile di condizione e nessuna coda/lista/array, solo valori scalari (int o float).
+
+
+monitor rb:
+
+codintion ok2go //nB>=1 && nR>=1 
+int nR=0
+int nB=0
+float valShared
+float resShared
+
+
+
+float meanblack(float v){
+    if(nR>=1){               //se ci sono dei rossi
+        valShared=v         //condivido il mio valore v nella variabile condivisa
+        ok2go.signal()      //si può fare la media, io vado in attesa
+        result=resShared    //salvo il risultato calcolato dall'altro preocesso(il rosso)
+    }
+    else{
+        nB++                //se sono nero e entro dopo un nero attendo
+        ok2go.wait()
+        nB--
+    }
+    result=(v+valShared)/2  //quando mi hanno sbloccato calcolo la media
+    resShared=result        //la condivido con l'altro processo
+
+    return resShared
+}
+
+float meanblack(float v){
+    if(nB>=1){               
+        valShared=v         
+        ok2go.signal()      
+        result=resShared    
+    }
+    else{
+        nR++                
+        ok2go.wait()
+        nR--
+    }
+    result=(v+valShared)/2  
+    resShared=result        
+    return resShared
+}
