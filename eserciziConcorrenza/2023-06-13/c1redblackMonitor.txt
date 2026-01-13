@@ -33,14 +33,14 @@ float meanblack(float v){
         nB++                //se sono nero e entro dopo un nero attendo
         ok2go.wait()
         nB--
+        result=(v+valShared)/2  //quando mi hanno sbloccato calcolo la media
+        resShared=result        //la condivido con l'altro processo
     }
-    result=(v+valShared)/2  //quando mi hanno sbloccato calcolo la media
-    resShared=result        //la condivido con l'altro processo
-
-    return resShared
+    
+    return result
 }
 
-float meanblack(float v){
+float meanred(float v){
     if(nB>=1){               
         valShared=v         
         ok2go.signal()      
@@ -50,8 +50,9 @@ float meanblack(float v){
         nR++                
         ok2go.wait()
         nR--
+        result=(v+valShared)/2  
+        resShared=result
     }
-    result=(v+valShared)/2  
-    resShared=result        
-    return resShared
+    
+    return result
 }
