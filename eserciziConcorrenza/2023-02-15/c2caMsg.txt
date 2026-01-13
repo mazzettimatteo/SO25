@@ -1,0 +1,60 @@
+Esercizio c.2: Dato un servizio di message passing asincrono implementare un servizio di message passing asincrono
+con contatore che ha tre primitive:
+#define ANY (pid_t) 0
+void casend(pid_t dest, T msg)
+T carecv(pid_t sender)
+int cacount(pid_t sender)
+Le primitive casend/carecv si devono comportare come la asend/arecv. La primitiva cacount deve avere come valore
+di ritorno il numero di messaggi che risultano in attesa di essere consegnati dal processo mittente indicato come
+paramentro.
+
+void casend(pid_t dest, T msg){
+    asend(msg,dest)
+}
+
+
+database db
+T carecv(pid_t sender){
+    asend(<CACA,getpid()>,getpid())
+    while(true){
+        incoming=arecv(ANY)
+        if(incoming.msg=CACA && incoming.snd==getpid()) break;
+        db[incoming.snd].insert(incoming.msg)
+    }//è arrivato CACA
+    if(db[sender].size()==0){
+        return arecv(sender)
+    }
+    else{
+        return db[sender].get()
+    }
+}
+
+int cacount(pid_t sender){
+    asend(<CACA,getpid()>,getpid())
+    while(true){
+        incoming=arecv(ANY)
+        if(incoming.msg=CACA && incoming.snd==getpid()) break;
+        
+        db[incoming.snd].insert(incoming.msg)
+               
+    }
+     return db[sender].size() 
+}
+
+È possibile implementare un meccanismo di message passing completamente asincrono dato il servizio di message
+passing asincrono con contatore? (sì + come oppure no + perché).
+
+Sì, siccome da specifica carecv e casend si compostano rispettivamente come arecv e asend e da quell posso implementare come segue un msg passing totalmente async allora si prò fare ance con casend e carecv.
+dato msgpass asincrono -> msg passing completamente asincrono
+
+void casend(msg_t msg, pid_t dest):
+    asend(<getpid(), msg>, dest)
+
+msg_t nbreceive(pid_t sender):
+    asend(<getpid(), TAG>, getpid())    
+    while true:
+        <snd, msg> = arecv(ANY)
+        if (snd == getpid() && msg == TAG):
+            break;
+        db.add(snd. msg)
+    return db.get(sender) --- se non c'e' restituisce NONE

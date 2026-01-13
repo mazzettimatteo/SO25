@@ -1,0 +1,36 @@
+Esercizio c.1: Scrivere il monitor cs che fornisca un servizio di elaborazione client-server.
+I molteplici "clienti" chiedono elaborazioni ai server eseguendo la seguente funzione:
+def service_request(data):
+ return cs.request(data)
+mentre i server eseguono il codice:
+process server(i: i = 0,...,NSERVER-1):
+ while True:
+   data = cs.get_request(i)
+   cs.send_result(i, process(data))
+Quando un server è libero chiede una nuova richiesta da elaborare (funzione get_request), se non ci sono richieste da
+elaborare attende che un cliente ne sottoponga una (tramite la funzione request). Se vi sono uno o più richieste in attesa
+di essere elaborate get_request restituisce i dati (argomento data) della prima.
+Dopo che il server ha elaborato la richiesta (funzione process) il risultato viene passsato al monitor tramite la funzione
+send_result che lo restituisce al cliente come valore di ritorno della funzione request
+
+
+monitor cs:
+
+int serverID
+obj queue requests
+condition reqMade
+condition reqLoaded
+condition responseReady[NSERVER]
+obj response
+
+obj request(data){
+  if(requests.size()==0){
+    requestMade.wait()
+  }
+}
+obj get_request(int i){
+  
+}
+void send_result(int i, obj data){
+
+}

@@ -1,0 +1,31 @@
+Esercizio c.2: Scrivere, facendo uso di semafori, la funzione syncvalue che ha la seguente dichiarazione:
+void syncvalue(int key);
+I processi che chiamano la syncvalue si bloccano sempre. Quando il valore del parametro key è diverso da quello della
+precedente chiamata il processo prima di bloccarsi riattiva tutti i processi in attesa. Per esempio:
+P chiama syncvalue(42), si blocca.
+Q chiama syncvalue(42), si blocca.
+R chiama syncvalue(44) sblocca P e Q poi si blocca.
+T chiama syncvalue(46), sblocca R e si blocca.
+P chiama syncvalue(46), si blocca.
+V chiama syncvalue(0), sblocca T e P poi si blocca...
+
+
+int currKey
+semaphore mutex(1)
+semaphore queue sems[]
+
+
+void syncvalue(int key){
+    semaphore mySem(0)          //semaforo privato
+    mutex.P()
+    if(key!=currKey){           //se la chiave è diversa
+        while(!sems.isEmpty()){ //sblocco tutti i semafori in attesa
+            s=sems.dequeue()
+            s.V()           
+        }
+        currKey=key             //cambio la chiave
+    }
+    sems.enqueue(mySem)         //vado in coda di attesa
+    mutex.V()   
+    mySem.P()       //mi blocco finché la chiave non cambia
+}

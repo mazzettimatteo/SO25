@@ -1,0 +1,54 @@
+Esercizio c.1: Scrivere il monitor redblack che fornisce una procedure entry:
+#define red 0
+#define black 1
+double rb(int color, double value)
+I processi che usano il monitor redblack devono sincronizzarsi in modo che completino l'esecuzione di rb in modo
+alternato: se l'ultimo processo che ha completato rb aveva indicato il colore rosso il prossimo sia nero e viceversa.
+(in altre parole mai due processi che avevano chiamato rb con lo stesso colore possono proseguire uno dopo l'altro
+Il valore di ritorno di rb deve essere la media dei valori dei parametri "value" delle chiamate rb di colore "color" che sono
+state sbloccate.
+Esempio: La chiamata rb(red, 2) non si blocca e ritorna 2, successivamente rb(red, 4) si blocca perché l'ultima
+sbloccata è rossa. Poi rb(black, 5) non si blocca perché l'ultima è rossa e ritorna 5 ma a questo punto si può sbloccare
+anche la chiamata precedente rb(red, 4) e il valore ritornato è 3 (la media fra 2 e 4). 
+
+
+monitor redblack:
+
+int prevCol
+condition ok2calcRed
+condition ok2calcBlack
+int redSum
+int blackSum
+int nR
+int nB
+
+
+double rb(int color, double value){
+    if(color==red){
+        nR++
+        redSum+=value
+        if(prevCol==color){
+            ok2calcRed.wait()
+        }
+        else{
+            ok2calcBlack.signal()
+        }
+        prevCol=color
+        return redSum/nR
+    }
+    if(color==black){
+        nB++
+        blackSum+=value
+        if(prevCol==color){
+            ok2calcBlack.wait()
+        }
+        else{
+            ok2calcRed.signal()
+        }
+        prevCol=color
+        return blackSum/nB
+    }
+}
+
+
+/*Dato che la politica è Signal Urgent: signal bloccante non posso effettivamente garantire che i valori di ritorno dei colori siano alternati*/
