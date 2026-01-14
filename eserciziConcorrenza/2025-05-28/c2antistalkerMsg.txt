@@ -1,0 +1,46 @@
+Esercizio c.2: dato un sistema di message passing asincrono implementare facendo uso di un processo server un
+servizio di message passing asincrono anti stalker che fornisce le seguenti funzioni:
+bool asasend(msg_t msg, pid_t dest)
+msg_t asarecv(pid_t sender)
+La funzione asasend restituisce true se la spedizione ha successo, false se fallisce.
+Un processo S viene considerato stalker da un destinatario D se ci sono almeno 7 messaggi spediti da S a D che non
+sono ancora stati ricevuti. Ogni ulteriore tentativo di S di spedire messaggi a D fallisce (asasend restituisce false) e il
+messaggio viene perso.
+Hint: non è necessario che il server smisti i messaggi, può limitarsi a contare quelli in attesa.
+
+
+bool asasend(msg_t msg, pid_t dest){
+    asend(<msg,getpid(),dest>,serverpid)    //ivio <msg,mittente,destinatario> al server che lo inoltrerà a destinazione dopo i controlli 
+    serverResponse=arecv(serverpid)         //mi metto in attesa del server per sapere se la spedizione ha avuto successo
+    return serverResponse.msg
+}
+
+database serverDB
+bool stalkers[][]={0...0}
+void server(){
+    while(true){            //ascolto sempre e memorizzo tutti i messaggi che mi arrivano
+        incoming=arecv(ANY) 
+        serverDB.insert(msg=incoming.msg, snd=incoming.snd, dest=incoming.dest) //inserisco tutti i msg nel database
+        if(serverDB.countFromTo[incoming.snd, incoming.dest]>=7){   //se il mittente è stalker
+            stalkers[incoming.snd][incoming.dest]=true              //me lo segno
+            asend(<false,getpid()>,incoming.snd)                    //gli mando un msg dicendo che il suo pacchetto è stato bloccato
+        }
+        else{   //non è uno stalker
+            asend(<incoming.msg,incoming.snd>,incoming.dest)     //faccio arrivare il pacchetto a destinazione
+            asend(<true,getpid()>,incoming.snd)                  //e lo segnalo al mittente
+        }
+        
+    }
+}
+
+
+database localDB
+msg_t asarecv(pid_t sender){
+    while(true){                //resto sempre in ascolto
+        incoming=arecv(serverpid)   
+        localDB.insert(msg=incoming.msg, snd=incoming.snd)  //memorizzo tutti i messaggi che mi arrivano dal server
+        if(localDB.msgFrom(sender)>=1) {
+            return localDB.get(sender) //se mi è arrivvato un messaggio da chi volevo lo ritorno
+        }   
+    } 
+}

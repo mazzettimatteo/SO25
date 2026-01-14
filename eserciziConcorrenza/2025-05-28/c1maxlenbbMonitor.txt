@@ -1,0 +1,51 @@
+Esercizio c.1: Scrivere il monitor maxlenbb che fornisce le seguenti procedure entry:
+void maxlenbb.add(int bufnum, objtype obj)
+objtype maxlenbb.get(void)
+Il monitor gestisce N buffer ognuno dei quali contiene NELEM elementi.
+La funzione add inserisce obj come elemento nel buffer indicato da bufnum.
+La funzione get cerca il buffer che contiene più elementi e da questo toglie in ordine FIFO un elemento e lo
+restituisce.
+In caso più buffer abbiano lo stesso numero massimo di elementi viene scelto il buffer di indice minore.
+
+monitor maxlenbb:
+
+buffer list bufs[N]
+condition ok2add[N]     //buffer[i].size<NELEM
+condition ok2get     //almeno un buff ha size>0 <=> tot>=1
+int totElem         
+
+
+void maxlenbb.add(int bufnum, objtype obj){
+    if(bufs[bufnum].size()>=NELEM){
+        ok2add[bufnum].wait()
+    }
+    //qui posso inserire
+    bufs[bufnum].insert[obj]
+    totElem++
+    ok2get.signal()
+}
+
+objtype maxlenbb.get(){
+    if(tot<1){
+        ok2get.wait()
+    }
+    //qui c'è almeno un elem da rimuovere e posso sicuramente fare la get
+    i=getBiggestBuf(bufs)
+    object result=bufs[i].removeFirst()
+    totElem--
+    ok2add[i].signal()
+    return result
+}
+
+
+int getBiggestBuf(buffer list bufs){
+    max=bufs[0].size()
+    maxIndex=0
+    for(i=1;i<N;i++){
+        if(buf[i].size()>max){
+            max=buf[i].size()
+            maxIndex=i
+        }
+    }
+    return maxIndex
+}

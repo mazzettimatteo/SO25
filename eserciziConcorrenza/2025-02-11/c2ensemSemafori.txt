@@ -1,0 +1,68 @@
+Esercizio c.2: I semafori ennari possono assumere i valori 0,...,N-1 e hanno la seguente interfaccia:
+class ensem:
+ void __ninit__(int N, int val); //costruttore
+ void nP(void)
+ void nV(void)
+L'invariante dei semafori ennari è:
+0 <= nV + init <= nP + N - 1
+dove nP è il numero di operazioni P completate, nV il numero delle operazioni V completate e init è il valore iniziale del
+semaforo. Semafori ennari e semafori ordinari hanno lo stesso potere espressivo(ENNARI iff ORDINARI)?
+Nota: i sem n-ari hanno come val max n-1
+
+ORDINARI-->ENNARI
+
+semaphore filled
+semaphore empty
+
+void __ninit__(int N, int val){
+    filled=__init__(val)  //parte dal val iniziale
+    empty=__init__((N-1)-val) //parte dallo spazio rimanente libero
+}
+
+void nP(void){
+    filled.P()  //val deve diminuire
+    empty.V()   //quindi lo spazio vuoto aumenta
+}
+
+void nV(){
+    empty.P()   //spazio vuoto diminuisce
+    filled.V()  //segue che val aumenta
+}
+
+ORDINARI<--ENNARI
+poiché abbiamo visto in aula che i semafori binari hanno lo stesso potere espressivo dei semafori ordinari 
+basta che N=2 ed è ovvio per la seguente implementazione:
+
+binarySem mutex(1)
+int value
+binarySem queue[]
+
+void __init__(int v){
+    value=v
+}
+
+void P(){   
+    mutex.P()   //mutua esclusione per l'accesso a value
+    if(value>0){
+        value-- //value diminuisce
+        mutex.V()   //rilascio mutua esclusione
+    }
+    else{   //ero già bloccato
+        binarySems s(0)
+        queue.enqueue(s)    //creo un nuovo semaforo da bloccare dato che ho fatto una P
+        mutex.V()   //rilascio mutua esc.
+        s.P()   //blocco quel semaforo
+        free(s)
+    }
+}
+void V(){
+    mutex.P()   //mutua esc. perché faccio accesso alla coda
+    if(queue.isEmpty()){
+        value++     //non ci sono semafori bloccati incremento value
+    }
+    else{   //se ci sono semafori bloccati
+        s=queue.dequeue()
+        s.V()   //sblocco il primo
+    }
+    mutex.V()   
+}
