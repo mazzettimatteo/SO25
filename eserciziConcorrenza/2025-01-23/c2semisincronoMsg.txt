@@ -1,0 +1,45 @@
+Esercizio c.2: Dato un servizio di message passing asincrono, implementare (senza far uso di processi server) un servizio
+semisincrono che fornisce le seguenti funzioni:
+sssend(msg_t msg, pid_t dest)
+msg_t ssrecv(pid_t sender)
+Se ci sono meno di 7 messaggi inviati dal processo A al processo B tramite la chiamata sssend non ancora ricevuti da B
+tramite la ssrecv la chiamata sssend non è bloccante. Se ci sono 7 messaggi non ancora ricevuti la chiamata sssend è
+bloccante. Il parametro sender della funzione ssrecv è l'identificativo di un processo mittente; il caso ANY non è
+consentito.
+
+
+Intanto implementiamo la recieve totalmente async (nbrecv) grazie a msgpassing asincrono
+
+int cont=0
+sssend(msg_t msg, pid_t dest){
+    response=nbrecv(dest)
+    if(response.msg==BLOCCATI){
+        while(true){
+            response=arecv(dest)
+            if(response.msg==SBLOCCATI) break;
+        }
+    }
+    asend(<msg, getpid()>,dest)
+}
+
+
+database db[]
+
+msg_t ssrecv(pid_t sender){
+    while(true){
+        asend(<TAG,getpid()>,getpid())
+        while(true){
+            incoming=arecv(ANY)
+            if(incoming.msg==TAG && incoming.snd=getpid()) break;
+            db[incoming.snd].insert(incoming.msg)
+        }
+        if(db[sender].size()>0) result=db[sender].remove()
+        if(db[sender].size()>7){ 
+            asend(<BLOCCATI,getpid()>,sender)
+        }
+        else{ 
+            asend(<SBLOCCATI,getpid()>,sender)
+        }  
+        if(result!=NULL) return result.msg
+    }
+}

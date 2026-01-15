@@ -1,0 +1,30 @@
+Esercizio c.2: Dato un sistema di message passing asincrono implementare un sistema di message passing asincrono
+con priorità che fornisce i seguenti metodi:
+pasend(int prio, msg_t msg, pid_t dest)
+msg_t pasrecv(pid_t sender)
+La funzione pasrecv restituisce il messaggio a massima priorità fra quelli in attesa di essere ricevuti.
+(non fare uso di processi server).
+
+
+pasend(int prio, msg_t msg, pid_t dest){
+    asend(<prio,msg,getpid()>,dest)
+}
+
+Incoming:=<priority, msg, snd>
+database db[]
+msg_t pasrecv(pid_t sender){
+    while(true){            //perché deve essere bloccante
+        asend(<-999,TAG,getpid()>,getpid()) //mi mando un messaggio TAG
+        while(true){
+            incoming=arecv(ANY) //memorizzo tutto finché non mi arriva il TAG
+            if(incoming.snd==getpid() && incoming.msg==TAG && incoming.prio==-999){ //esco quando mi arriva il TAG
+                break;
+            }
+            db[incoming.snd].insert(incoming.prio, incoming.msg)
+        }
+        if(db[sender].size()>0){    //se mi è arrivato un messaggio dal sender lo ritorno, se no ricomincio l'ascolto
+            result=db[sender].removeMaxPrio()
+            return result
+        }
+    }    
+}

@@ -1,0 +1,69 @@
+Esercizio C.3: Siano dati i due processi seguenti A e B nei quali print è una funzione atomica.
+semaphore SA=1
+semaphore SB=0
+process A:
+    while true:
+        SA.P()
+        <print('A')>
+        SB.V()
+process B:
+    while true
+        SB.P()
+        <print('B')>
+        SA.V()
+Modificare il codice, senza aggiungere ulteriori semafori o chiamate della funzione print in modo che l'output dei due
+processi sia la stringa infinita BBBABBBABBBABBBA......
+
+IDEA 1: metto un for
+
+semaphore SA=0
+semaphore SB=1
+process A:
+    while true:
+        SA.P()
+        <print('A')>
+        SB.V()
+process B:
+    while true
+        SB.P()
+        for(i=1..3) <print('B')>
+        SA.V()
+      
+        
+IDEA 2: cont e firstCall 
+
+semaphore SA=1
+semaphore SB=0
+
+
+process A:
+    bool firstCall=true
+    while true:
+        SA.P()
+        if(firstCall){
+            firstCall=false
+        }
+        else{
+            <print('A')>
+        }
+        SB.V()
+        SB.V()
+        SB.V()
+process B:
+    int cont=0
+    while true
+        SB.P()
+        cont++
+        <print('B')>
+        if(cont==3){
+            cont=0
+            SA.V()
+        }
+    
+
+esecuzione idea 2:
+cont=0,1,2,3,0,1,2,3,0
+sA=1,0,1,0,1,0
+sB=0,3,2,1,0,3,2,1,0,3
+firsCall=T,F
+output=_BBBABBBA

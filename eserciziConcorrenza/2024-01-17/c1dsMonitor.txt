@@ -1,0 +1,77 @@
+Esercizio c.1: Scrivere il monitor ds (dispatchstring) che consenta di trasferire stringhe di caratteri fra processi. Il monitor
+ha quattro procedure entry:
+void startsend(void)
+void sendchar(char c)
+void startrecv(void)
+char recvchar(void)
+Quando un processo vuole spedire una stringa chiama la funzione startsend poi tramite sendchar spedisce uno ad
+uno i caratteri della stringa e infine il carattere 0 per indicare la fine della stringa. Similmente quando un processo vuole
+ricevere una stringa chiama la funzione startrecv, riceve uno ad uno i caratteri usando la recvchar. La ricezione del
+carattere 0 indica la fine della stringa.
+Il monitor trasferisce una stringa alla volta e deve usare un buffer di un solo carattere (non può memorizzare vettori o
+stringhe di caratteri).
+
+
+monitor betterDs:
+
+condition ok2startRecv    
+condition ok2startSend   
+condition ok2exchange
+condition dataReady
+condition spaceAvailable
+
+bool bufIsEmpty
+bool senderActive
+bool recieverActive
+
+char buf
+
+
+void startsend(void){
+    if(senderActive){
+        ok2startSend.wait()
+    }
+    senderActive=true
+    if(!recieverActive){
+        ok2exchange.wait()
+    }
+    else{
+        ok2exchange.signal()
+    }
+}
+
+void sendchar(char c){
+    buf=c
+    dataReady.signal()
+    spaceAvailable.wait()   //attendo che sia stata fatta una lettura
+    if(c==0){
+        senderActive=false
+        ok2startSend.signal()
+    }
+}
+
+void startrecv(void){
+    if(recieverActive){
+        ok2startRecv.wait()
+    }
+    recieverActive=true
+    if(!senderActive){
+        ok2exchange.wait()
+    }
+    else{
+        ok2exchange.signal()
+    }
+}
+
+char recvchar(void){
+    if(bufIsEmpty){
+        dataReady.wait()
+    }
+    result=buf
+    bufIsEmpty=true
+    spaceAvailable.signal()
+    if(result==0){
+        ok2startRecv.signal()
+    }
+    return serult
+}
