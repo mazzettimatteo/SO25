@@ -1,0 +1,26 @@
+Esercizio c.2: Sia dato un servizio di message passing asincrono broadcast che fornisce due funzioni:
+void absend(msg_type msg)
+msg_type abrecv(void)
+I messaggi spediti con la absend vengono ricevuti da tutti i processi e la abrecv riceve i messaggi spediti da ogni
+mittente. I messaggi di ogni mittente vengono ricevuti il ordine FIFO.
+E’ possibile con il servizio a diffusione implementare un servizio di message passing asincrono senza fare uso di
+processi server? Se sì fornire l’implementazione, se no (di)mostrare l’impossibilità.
+
+asend(msg_t msg, pid_t dest){
+    absend(<msg,getpid(),dest>) //invio un pacchetto <msg_t, pid_t, pid_t>
+}
+
+
+database db[]
+msg_t arecv(pid_t sender){
+    while(true){
+        if(db[sender].size()>0){    //se mi è arrivato un messaggio da chi volevo esco e lo ritorno
+            break;
+        }
+        incoming=abrecv()   //guardo tutti i pacchetti che passano
+        if(incoming.dest==getpid()){    //se sono io il destinatario li memorizzo
+            db[incming.snd].insert(incoming.msg)
+        }
+    }
+    return db[sender].remove()    
+}

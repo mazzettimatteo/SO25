@@ -1,0 +1,54 @@
+Esercizio c.2: Usando i semafori implementare la classe nas712 (not a semaphore 7 1/2).
+class nas712:
+ __nainit__(value)
+ naP()
+ naV()
+nas712 si comporta come un semaforo ma ci possono essere al più 7 processi bloccati. Quando ci sono 7 processi
+bloccati una ulteriore naP non è bloccante e causa la riattivazione di tutti i (7) processi bloccati.
+Ricorda: np<=nv+value
+
+
+int val
+int nBlocked
+semaphore mutex(1)
+semaphore sem(0)
+
+
+__nainit__(int value){
+    val=value
+    nBlocked=0
+}
+
+void naP(){
+    mutex.P()
+    if(val>0){      //se il val del semaforo >0 diminuisco e basta
+        val--
+        mutex.V()
+    }
+    else{
+        if(nBlcocked<7){    //se non ci sono già 7 bloccati
+            nBlocked++      //aumento bloccati
+            mutex.V()
+            sem.P()         //mi blocco
+        }
+        else{
+            for(i=0;i<7;i++){
+                sem.V()         //sblocco i sette
+            }
+            nBlocked=0          
+            mutex.V()
+        }
+    }
+}
+
+void naV(){
+    mutex.P()
+    if(nBlocked>0){     //se ci sono dei bloccati sblocco il primo
+        nBlocked--
+        sem.V()
+    }
+    else{               //altrimenti incremento val così che il prossimo che fa P non si blocchi
+        val++
+    }
+    mutex.V()
+}

@@ -1,0 +1,46 @@
+Esercizio c.1: Il monitor mbb gestisce un servizio di bounded buffer con scrittura e lettura di elementi multipli.
+mbb ha due procedure entry:
+void write(obj_t *data, int ndata)
+void read(obj_t *data, int ndata)
+il parametro "data" è un vettore di elementi da scrivere o leggere. Il parametro ndata indica il numero di elementi del
+vettore. (le richieste devono essere gestite in modo FIFO). Il buffer contiene al massimo MAX elementi di tipo obj_t.
+
+monitor mbb:
+
+obj_t buffer buf[]
+condition ok2write  //size<MAX
+condition ok2read   //size>0
+int writersWaiting
+int readersWaiting
+
+
+void write(obj_t *data, int ndata){
+    if(buf.size()+ndata>MAX || writersWaiting>0){
+        writersWaiting++
+        ok2write.wait()
+        writersWaiting--
+    }
+    //qui posso scrivere
+    for(i=0...ndata){
+        buf.insert(data[i])
+    }
+    ok2read.signal()
+}
+
+void read(obj_t *data, int ndata){
+    if(buf.size()< ndata || readersWaiting>0){
+        readersWaiting++
+        ok2read.wait()
+        readerWaiting--
+    }
+    for(i=0..ndata){
+        data[i]=buf.remove()
+    }
+    //sblocco il primo proc in attesa di scrivere 
+    ok2write.signal()
+
+    //ptrebbero esserci altri dati da leggere, nel caso faccio partire un'altra lettura
+    if(readersWaiting>0){
+        ok2read.signal()
+    }
+}
