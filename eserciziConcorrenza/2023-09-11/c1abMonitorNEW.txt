@@ -1,0 +1,69 @@
+Esercizio c.1: Il monitor AB gestisce l'accodamento limitato di due tipi di dati A e B. Il monitor prevede 3 procedure entry:
+void AB.add2a(int a0, int a1)
+void AB.addb(int b0)
+void AB.geta2b(int *a0, int *b0, int *b1).
+add2a aggiunge 2 elementi di tipo A, addb aggiunge un elemento di tipo B, geta2b restituisce un elemento di tipo A e
+due di tipo B.
+Il monitor può memorizzare al massimo MAX elementi di tipo A e MAX di tipo B. (MAX >= 2).
+Se non sono disponibili almeno un elemento di tipo A e due di tipo B la funzione geta2b deve attendere.
+Gli elementi devono essere restituiti in ordine FIFO così come le richieste pendenti per geta2b devono essere esaudite in
+ordine FIFO.
+
+monitor AB:
+
+queue aBuf
+queue bBuf
+
+condition ok2addA
+condition ok2addB
+condition ok2get
+
+int nA      //dimensione di aBuf
+int nB
+
+void AB.add2a(int a0, int a1){
+    if(nA+2>MAX){
+        ok2addA.wait()
+    }
+    aBuf.enqueue(a0)
+    aBuf.enqueue(a1)
+    nA+=2
+    if(nA>=1 && nB>=2){
+        ok2get.signal()
+    }
+}
+
+void AB.addb(int b0){
+    if(nB+1>MAX){
+        ok2addB.wait()
+    }
+    bBuf.enqueue(b0)
+    nB++
+    if(nA>=1 && nB>=2){
+        ok2get.signal()
+    }
+}
+
+void AB.geta2b(int *a0, int *b0, int *b1){
+    if(nA<1 || nB<2){
+        ok2get.wait()
+    }
+    //qui posso restituire
+    *a0=aBuf.dequeue()
+    *b0=bBuf.dequeue()
+    *b1=bBuf.dequeue()
+    nA--
+    nB-=2
+    if(nA<=MAX-2){
+        ok2addA.signal()
+    }
+    
+    if(nB<=MAX-1){
+        ok2addB.signal()
+    }
+    if(nB<=MAX-1){
+        ok2addB.signal()
+    }
+
+
+}

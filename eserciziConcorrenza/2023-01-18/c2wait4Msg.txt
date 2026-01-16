@@ -1,0 +1,58 @@
+Esercizio c.2: Facendo uso di semafori scrivere un funzione wait4 che faccia proseguire i processi a blocchi di quattro: il
+primo processo che chiama la wait4 si deve fermare, così come il secondo e il terzo. Il quarto processo deve far
+proseguire tutti e quattro i processi. In uguale modo l'ottavo processo che chiama wait4 risveglierà anche il quinto, il
+sesto e il settimo.
+SI chiede:
+* che l'implementazione non faccia uso di code o di altre strutture dati ma solamente di contatori (e ovviamente
+semafori)
+* che la soluzione faccia uso del passaggio del testimone per garantire che vengano riattivati i processi corretti e non
+altri.
+
+
+SOL 1: senza passaggio del baton
+int nWaiting=0
+semaphore mutex(1)
+semaphore s(0)
+
+void wait4(){
+    mutex.P()
+    if(nWaiting==3){
+        nWaiting=0
+        mutex.V()
+        s.V()
+        s.V()
+        s.V()
+    }
+    else{
+        nWaiting++
+        mutex.V()
+        s.P()
+    }
+}
+
+SOL 2: passing-the-baton: chi fa s.V() non deve rilasciare il mutex
+
+int nWaiting=0
+semaphore mutex(1)
+semaphore s(0)
+
+void wait4(){
+    mutex.P()
+    nWaiting++
+    if(nWaiting<4){
+        mutex.V()
+        s.P() //vado in attesa
+        //mi sveglio qui
+        nWaiting--
+        if(nWaiting>0){ //se si deve sbloccare ancora qualcuno
+            s.V()       //lo sblocco ma non rilascio mutex
+        }
+        else{ //nWaiting è 0
+            mutex.V() //dato che sono l'ultimo rilascio mutex
+        }
+    }
+    else{   //sono il quarto: sblocco il primo ma non rilascio mutex
+        nWaiting--
+        s.V()
+    }
+}

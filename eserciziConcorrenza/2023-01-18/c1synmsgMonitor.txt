@@ -1,0 +1,56 @@
+Esercizio c.1: Scrivere il monitor synmsg che consenta uno scambio di messaggi fra due processi in maniera sincrona.
+Il processo produttore esegue il seguente codice.
+producer: process:
+ while True:
+   msg_t msg = produce_new_msg()
+   synmsg.send(&msg)
+e il processo consumatore:
+producer: process:
+ while True:
+   msg_t msg
+   synmsg.recv(&msg)
+   consume_msg(&msg)
+Come si vede le procedure entry hanno come parametro l'indirizzo del messaggio:
+procedure entry void send(msg_t *msg)
+procedure entry void recv(msg_t *msg)
+Il monitor deve trasferire il contenuto del messaggio direttamente fra i processi usando la funzione:
+void copymsg(msg_t *source, msg_t *dest)
+(Il monitor non deve avere buffer di tipo msg_t ma solo variabili di tipo puntatore a msg_t.)
+
+monitor synmsg:
+
+int nSender
+int nReciever
+condition ok2send   //se c'è un sender attivo
+condition ok2recv   //se c'è un reciever attivo
+msg_t * source
+msg_t * dest
+
+void send(msg_t *msg){
+    //c'è già un ricevitore in attesa
+    if(nReciever>0){
+        copymsg(msg, dest)
+        ok2recv.signal()
+    }
+    else{ //no ricevitori
+        source=msg
+        nSender++
+        ok2send.wait()
+        nSender--
+    }
+}
+
+void recv(msg_t *msg){
+    if(nSender>0){ //c'è già un sender allora copio 
+        copymsg(source,msg)
+        ok2send.signal()
+    }
+    else{   //attendo
+        dest=msg
+        nReciever++
+        ok2recieve.wait()
+        nRecieve--
+    }
+}
+
+/*ESEMPIO DI SYNC APPUNTAMENTO/SCAMBIO */
