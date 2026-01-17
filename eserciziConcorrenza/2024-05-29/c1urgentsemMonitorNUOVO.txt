@@ -1,0 +1,93 @@
+Esercizio c.1: Scrivere il monitor urgentsem che implementi un servizio di semafori con supporto di P urgente.
+il monitor ha tre procedure entry e un costruttore:
+void init(int initvalue)
+void P(void)
+void UP(void)
+void V(void)
+Vale l'invariante initvalue + NV >= NP + NUP (dove NX indica il numero di processi che hanno completato l'operazione X).
+UP è una variante della P di tipo urgente. Quando rispettando l'invariante sia possibile scegliere fra un processo in attesa
+per una chiamata P e uno in attesa per UP questo ultimo deve essere riattivato. Fra processi in attesa per P così come fra
+processi in attesa per UP la riattivazione deve avvenire in ordine FIFO. 
+
+
+monitor urgentsem:
+
+int val
+int urgentWaiting=0
+int chillWaiting=0
+condition chillCanGo
+condition urgentCanGo
+
+void init(int initvalue){
+    val=initvalue
+}
+
+void P(){
+    if(val<=0 || urgentWaiting>0){
+        chillWaiting++
+        chillCanGo.wait()
+        chillWaiting--
+    }
+    val--
+}
+
+void UP(){
+    if(val<=0){
+        urgentWaiting++
+        urgentCanGo.wait()
+        urgentWaiting--
+    }
+    val--
+}
+
+void V(){
+    val++
+    if(urgentWaiting>0){
+        urgentCanGo.signal()
+    }
+    else if(chillWaiting>0){
+        chillCanGo.signal()
+    }
+}
+
+//OPPURE
+
+monitor urgentsem1:
+
+int val
+int urgentWaiting=0
+int chillWaiting=0
+condition chillCanGo
+condition urgentCanGo
+
+void init(int initvalue){
+    val=initvalue
+}
+
+void P(){
+    if(val<=0 || urgentWaiting>0){
+        chillWaiting++
+        chillCanGo.wait()
+        chillWaiting--
+    }
+    else val--      //perché se ero in attesa e mi hanno sbloccato(val non è aumentato) allora non ha senso diminuirlo
+}
+
+void UP(){
+    if(val<=0){
+        urgentWaiting++
+        urgentCanGo.wait()
+        urgentWaiting--
+    }
+    else val--
+}
+
+void V(){
+    if(urgentWaiting>0){
+        urgentCanGo.signal()
+    }
+    else if(chillWaiting>0){
+        chillCanGo.signal()
+    }
+    else val++
+}

@@ -1,0 +1,32 @@
+Esercizio c.2: Dato un servizio di message passing asincrono implementare un servizio di message passing testardo
+che consegna solo i messaggi ricevuti due volte con il medesimo contenuto da qualsiasi mittente (i due messaggi
+uguali possono provenire da mittenti diversi). Il servizio di message passing testardo prevede due funzioni:
+void tsend(msg_t msg, pid_t dest)
+msg_t trecv(void)
+Il message passing testardo ha lo stesso potere espressivo del message passing asincrono?
+
+void tsend(msg_t msg, pid_t dest){
+    asend(<msg,getpid()>,dest)
+}
+
+database db
+msg_t trecv(void){
+    while(true){
+        incoming=arecv(ANY)
+        if(db.msgIsAlreadyIn(incoming.msg)){
+            result=incoming.msg
+            for pid in db.sender{
+                db[pid].remove(incoming.msg)
+            }
+            break;
+        }
+        else{
+            db[incoming.snd].add(incoming.msg)
+        }
+    }
+    return result
+}
+
+
+Il message passing testardo ha lo stesso potere espressivo del message passing asincrono?
+No, perché non è garantito che un messaggio arrivi 

@@ -1,0 +1,78 @@
+Esercizio c.2: Facendo uso di semafori scrivere una funzione syncvalue:
+int syncvalue(int key)
+la funzione syncvalue è sempre bloccante. Quando il valore del parametro key è diverso da quello della precedente
+chiamata il processo prima di bloccarsi riattiva tutti i processi in attesa. Il valore di ritorno è il numero di processi con lo
+stesso valore key sbloccati. Per esempio:
+P chiama syncvalue(42), si blocca.
+Q chiama syncvalue(42), si blocca.
+R chiama syncvalue(44) sblocca P e Q poi si blocca. Il valore di ritorno per P e Q è 2.
+T chiama syncvalue(46), sblocca R che ritorna 1 e si blocca.
+Q chiama syncvalue(46), si blocca.
+P chiama syncvalue(46), si blocca
+V chiama syncvalue(0), sblocca T, Q e P (valore di ritorno: 3) poi si blocca...
+
+semaphore queue sems[]
+int queue vals[]
+semaphore mutex(1)
+int currKey=-999
+int nWaiting=0
+
+int syncvalue(int key){
+    semaphore mySem(0)
+    mutex.P()
+    if(key==currKey){
+        sems.enqueue(mySem)
+        nWaiting++
+        mutex.V()
+        mySem.P()
+    }
+    else{
+        howMany=nWaiting
+        while(!sems.isEmpty()){
+            semaphore s=sems.dequeue()
+            vals.enqueue(howMany)       //memorizzo quanti ce n'erano in attesa, lo faccio tante volte quanti sono i proc in coda
+            s.V()
+        }
+        currKey=key
+        sems.enqueue(mySem)
+        nWaiting=1
+        mutex.V()
+        mySem.P()
+    }
+
+    mutex.P()
+    result=vals.dequeue()   //ogni processo in uscita rimuove un 'howMany' memorizzato
+    mutex.V()
+
+    return result
+}
+
+
+
+//SOLUZIONE PROF
+
+semaphore mutex
+semaphore keywait
+semaphore cont
+int nw
+int oldkey
+int nproc
+int syncvalue(int key):
+    int rv
+    mutex.P()
+    if key != oldkey:
+        if nw > 0:
+            nproc = nw
+            keywait.V()
+            cont.P()
+    oldkey = key
+    nw++
+    mutex.V()
+    keywait.P()
+    nw--
+    rv = nproc
+    if nw == 0:
+        cont.V()
+    else:
+        keywait.V()
+    return rv

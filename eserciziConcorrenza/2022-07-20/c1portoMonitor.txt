@@ -1,0 +1,74 @@
+Esercizio c.1: In un porto con una sola banchina utilizzabile occorre caricare cereali sulle navi. I camion portano i cereali
+al porto. Una sola nave alla volta può essere attraccata al molo, un solo camion alla volta scarica i cereali nella nave.
+Il codice eseguito da ogni nave è:
+nave[i] process:
+ porto.attracca(capacità)
+ porto.salpa()
+ ...naviga verso la destinazione
+Il codice di ogni camion è:
+camion[j] process:
+ while(1):
+   quantità = carica_cereali()
+   porto.scarica(quantità)
+I camion fanno la spola dai depositi alla nave. La nave arriva vuota e può salpare solo se è stata completamente
+riempita (la somma delle quantità scaricate dai camion raggiunge la capacità indicata come parametro della funzione
+attracca). Se un camion può scaricare solo parzialmente il suo carico rimane in porto e aspetta di completare
+l'operazione con la prossima nave che attraccherà al molo.
+Scrivere il monitor porto.
+
+monitor porto:
+
+condition ok2attraccare     //se non ci sono altre barche attraccate
+condition ok2salpare        //se ho svuotato la barca
+condition ok2scaricare      //se la barca non è totalmente carica
+condition camionMutex       //se non c'è nessun camionInLavoro
+
+bool camionInLavoro=false
+bool naveAttraccata=false
+int spazioOccupato
+int capacitaTot
+
+porto.attracca(int capacità){
+    if(naveAttraccata){
+        ok2attraccare.wait()
+    }
+    capacitaTot=capacità
+    naveAttraccata=true
+    spazioOccupato=0
+    ok2scaricare.signal()
+}
+
+porto.salpa(){
+    if(spazioOccupato!=capacitaTot){
+        ok2salpare.wait()
+    }
+    naveAttraccata=false
+    ok2attraccare.signal()
+
+}
+
+porto.scarica(quantità){
+    if(camionInLavoro){
+        camionMutex.wait()
+    }
+    camionInLavoro=true
+    while(quantità>0){
+        if(!naveAttraccata || spazioOccupato==capacitaTot){        //se non c'è la nave o questa è piena, attendo
+            ok2scaricare.wait()
+        }
+        spazioRimanente=capacitaTot-spazioOccupato
+        if(spazioRimanente>quantità){             
+            daScaricare=quantità
+        }
+        else{                           
+            spazioRimanente
+        }
+        spazioOccupato+=daScaricare
+        quantità-=daScaricare
+        if(spazioOccupato==capacitaTot){
+            ok2saplare.signal()
+        }
+    }
+    camionInLavoro=false
+    camionMutex.signal()
+}
