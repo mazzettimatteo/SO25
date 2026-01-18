@@ -1,0 +1,38 @@
+Esercizio c.2: Un servizio di message passing asincrono non fifo (nfasend/nfarecv) consegna in tempo finito tutti i
+messaggi spediti ma non è garantito che i messaggi vengano ricevuti nell'ordine nel quale sono stati spediti.
+void nfasend(msg_t msg, pid_t dest)
+msg_t nfarecv(pid_t sender)
+Dato un servizio di message passing asincrono non fifo scrivere una libreria che implementi il servizio di message
+passing asincrono fifo:
+void asend(msg_t msg, pid_t dest)
+msg_t arecv(pid_t sender)
+Nota: sia il servizio dato (non fifo) sia quello da implementare (fifo) consentono la ricezione solo da mittente specificato
+(non supportano ANY/*).
+
+
+
+int list cont[]=      //indicizzato con pid_t delle dest
+void asend(msg_t msg, pid_t dest){
+    if(dest not in cont.keys){
+        cont.addKey(dest)
+        cont[dest]=-1
+    }
+    cont[dest]++
+    nfasend(<msg,cont[dest]>,dest)
+}
+
+
+msg_t database db[]   //indicizzato da pid_t, ad ogni pid corrisponde un array di messaggi numerati in ordine di cont
+int nMsgLetti[]       //indicizzato da pid_t: sender
+msg_t arecv(pid_t sender){
+    while(true){
+        if(db[sender].val(nMsgLetti[sender])!=NULL){
+            result=db[sender].get(nMsgLetti[sender])
+            nMsgLetti[sender]++
+            break;
+        }
+        incoming=nfarecv(seder)
+        db[sender].insert(incoming.msg, incoming.num)
+    }
+    return result
+}
