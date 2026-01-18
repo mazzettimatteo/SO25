@@ -1,0 +1,36 @@
+Esercizio c.2: Un servizio viene fornito in modalità client-server usando message passing asincrono.
+Al fine di aumentare l'efficienza si decide di usare molti server e un processo dispatcher in grado di distribuire le
+richieste agli N server. Quando un processo server è libero riceve dal dispatcher la prossima richiesta da elaborare:
+
+codice di ogni client (tanti!): .....
+asend(<getpid(), request>, dispatcher)
+result = arecv(dispatcher)
+
+
+server process[i], i = 0, ..., N-1:
+ request = arecv(dispatcher)
+ result = compute(request)
+ asend(<getpid(), result>, dispatcher)
+
+Scrivere il processo dispatcher. (il dispatcher conosce i pid di tutti i server).
+
+queue freeServers
+queue pendingReq
+pid_t map[]     //map[serverId]=clientPid
+dispatcher(){
+    while(true){
+        incoming=arecv(ANY)
+        if(isServer(incoming.snd)){
+            serverId=getServerindex(incoming.snd)
+            result=incoming.message
+            clientDest=map[serverId]
+            asend(result,clientDest)
+
+            if(!pendingReq.isEmpty()){
+                nextPack=pendingReq.dequeue()
+                map[serverId]=nextPack.snd
+            }
+            asend(nextPack.msg, )
+        }
+    }
+}

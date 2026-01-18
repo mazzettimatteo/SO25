@@ -1,0 +1,41 @@
+Esercizio c.1: Scrivere il monitor oddblock che ha le due seguenti procedure entry:
+int oddstop(int key)
+void evengo(void)
+I processi che chiamano la oddstop si fermano. Detto blocked[key] il numero di processi bloccati che hanno chiamato
+oddblock con parametro key, la funzione evengo deve riattivare tutti i processi che sono fermi per effetto di una
+oddstop per i quali blocked[key] sia pari. oddstop deve restituire il valore blocked[key].
+Date le definizioni di questo testo ci possono essere casi di deadlock o di starvation? perché?
+
+monitor oddblock:
+
+condition list ok2go[]
+int list blocked[]      //n(key)
+int list results[]      
+
+
+oddblock(int key){
+
+    if(key not in blocked){     //per inizializzare se non ho mai visto la chiave
+        blocked[key]=0
+        ok2go[key]=new condition
+    }
+
+
+    blocked[key]++      //conto nuova chiave
+    ok2go[key].wait()   //la metto in attesa
+    ok2go[key].signal() //sblocco a cascata
+    blocked[key]--
+
+    return results[k]   
+}
+
+evengo(){
+    for each k in blocked{
+        if(blocked[k]%2==0){    //se blocked[n] è pari
+            results[k]=blocked[k]   //memorizzo quanti ce n'erano bloccati
+            ok2go[key].signal()     //sblocco il primo che a cascata sblocca gli altri con a stessa chiave
+        }
+    }
+}
+
+Se even go non viene mai chiamata o se viene chiamata solo con tutti i processi bloccati con la stessa chiave sono in numero dispari c'è starvation

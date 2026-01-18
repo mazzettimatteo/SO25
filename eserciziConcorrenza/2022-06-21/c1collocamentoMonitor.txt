@@ -1,0 +1,56 @@
+Esercizio c.1: Scrivere il monitor collocamento:
+void cercolavoro(char *nome, char *skill)
+char *assumo(char * skill)
+Quando un processo chiama la cercolavoro si mette in attesa di una richiesta di lavoro e rimane bloccato nel monitor
+fino a che non è stato assunto. Nella cercolavoro viene indicato il nome dell'aspirante lavoratore la sua capacità (skill).
+Un datore di lavoro con necessità di personale chiama la assumo specificando la capacità richiesta. Se c'è in attesa
+almeno un aspirante lavoratore con quella specifica capacità (uguale valore di skill), il datore di lavoro riceve il nome del
+nuovo dipendente ed entrambi i processi escono dal monitor. Nel caso non ci siano richieste compatibili il datore di
+lavoro si blocca nel monitor attendendo un lavoratore con la capacità cercata. Quando arriva il lavoratore che soddisfa
+le richieste si sbloccano entrambi i processi lavoratore e datore di lavoro. La assumo restituisce in ogni caso il nome del
+dipendente da assumere.
+
+monitor collocamento:
+
+
+condition list ok2trovareLavoro[]   //indicizzata con i nomi
+dictionary <char*,queue of char*> dict        //indicizzato con le skill e per ogni skill c'è una coda di nomi
+condition list ok2assumere[]        //indicizzata con array di char(le skill)
+
+
+void cercolavoro(char *nome, char *skill){
+    dict[skill].enqueue(nome)               //vengo salvato come persona con quella skill
+    ok2assumere[skill].signal()             //dico che c'è uno con quella skill da assumere
+    if(dict[skill].contains(nome)){         //finché non sono stato assunto attendo
+        ok2trovareLavoro[nome].wait()       
+    }
+}
+
+char *assumo(char * skill){
+    if(dict[skill].size()==0){              //se non c'è nessuno con quella skill da assumere, attendo
+        ok2assumere[skill].wait()
+    }
+    //qui sicuramente posso assumere qualcuno con quella skill
+    nuovoImpiegato=dict[skill].dequeue()        //la assumo
+    ok2trovareLavoro[nuovoImpiegato].signal()   //sblocco la persona che era in attesa
+    return nuovoImpiegato
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+dictionary <char*,queue of char*> dict        //indicizzato con le skill e per ogni skill c'è una coda di nomi
+
+skill       |           nomi
+
+java        |           luca,mazzo
+c++         |           simo
+
+mazzo(java)
+simo(c++)
+milo(java)
+
+
+coen.assumi(java)
+    dict[java].size()?  3>0     quindi posso assumere
+    personaAssunta=dict[java].dequeue()     //milo
