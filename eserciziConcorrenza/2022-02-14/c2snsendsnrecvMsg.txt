@@ -1,0 +1,49 @@
+Esercizio c.2: Dato un servizio di message passing asincrono implementare un servizio di message passing sincrono
+con selezione ordinata che ha la seguente interfaccia:
+ void snsend(msgtype msg, pid_t dest);
+ msgtype snrecv(pid_t sender, int n);
+La funzione snrecv deve restituire l'n-mo messaggio proveniente dal mittente specificato (che può essere any). Se n ==
+0 restituisce l'ultimo messaggio. Esempi:
+m = snrecv(tizio, 1): restituisce il primo messaggio da tizio (attende se non ve ne sono)
+m = snrecv(ANY, 42): restituisce il 42-mo messaggio da chiunque (attende se ci sono meno di 42 messaggi in attesa di
+essere ricevuti)
+m = snrecv(caio, 0): restituisce l'ultimo messaggio ricevuto da Caio (attende se non ci sono messaggi pendenti da Caio)
+m = snrecv(ANY, 0): restituisce l'ultimo messaggio ricevuto, indipendentemente dal mittente. 
+
+
+void snsend(msgtype msg, pid_t dest){
+    asend(<msg,getpid()>,dest)
+    ack=arecv(dest)
+}
+
+
+<pidtype, msgtype> queue messages
+
+msgtype snrecv(pid_t sender, int n){
+    while(true){
+        if( (sender!=ANY && messages.from(sender)>n) || (sender==ANY && messages.size()>n) ){
+            if(sender==ANY){
+                if(n==0){
+                    result=messages.removeLast()
+                }
+                else{
+                    result=messages.removeNumber(n)
+                }
+            }
+            else{
+                if(n==0){
+                    result=messages.removeLastFrom(sender)
+                }
+                else{
+                    result=messages.removeNumberFrom(n,sender)
+                }
+            }
+            //mando ack
+            asend(ack, result.snd)
+            break;
+        }
+        incoming=arecv(ANY)
+        messages.enqueue(incoming.snd, incoming.msg)
+    }
+    return result.msg
+}

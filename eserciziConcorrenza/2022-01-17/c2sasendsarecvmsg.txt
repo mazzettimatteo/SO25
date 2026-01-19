@@ -1,0 +1,24 @@
+Esercizio c.2: Un servizio di message passing sincrono senza selezione del mittente prevede una API con due funzioni:
+sasend(msg_t msg, pid dest);
+msg_t sarecv(void);
+La funzione sarecv restituisce il primo messaggio ricevuto da qualsiasi mittente ed è bloccante se non ci sono
+messaggi pendenti. la funzione sasend si blocca fino a quando il messaggio msg non viene ricevuto dal processo dest.
+Dato quindi un servizio di message passing sincrono senza selezione del mittente implementare un servizio di
+message passing sincrono (standard, quello definito nel corso) senza fare uso di processi server. 
+
+void ssend(msg_t msg, pid dest){
+    sasend(<msg,getpid()>,dest)
+}
+
+database db
+msg_t srecv(pid sender){
+    while(true){
+        if(db[sender].size()>0){
+            break;
+        }
+        incoming=sarecv()
+        db[incoming.snd].insert(incoming.msg)
+    }
+    result=db[sender].dequeue()
+    return result
+}

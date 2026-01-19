@@ -1,0 +1,57 @@
+Esercizio c.1: Scrivere il monitor multibuf che implementi un buffer limitato (MAX elementi) di oggetti di tipo T che
+implementi le seguenti procedure entry:
+void add(int n, T objects[]);
+void get(int n, T objects[]);
+La funzione add deve aggiungere al buffer gli n oggetti passati col parametro objects. La funzione get deve predere
+dal buffer in modalità FIFO i primi n elementi presenti nel buffer e copiarli negli elementi del vettore objects.
+Entrambe le funzioni devono attendere che vi siano le condizioni per poter essere completate: che ci siano n elementi
+liberi per la add, che ci siano n elementi nel buffer per la get. Non sono ammesse esecuzioni parziali: mentre attendono
+le rispettive condizioni nessun elemento può essere aggiunto o rimosso dal buffer.
+La definizione del problema C.1 presenta casi di possibile deadlock? quali?
+
+
+
+monitor multibuf:
+
+queue buf           //dimensione massima = MAX
+condition ok2add
+condition ok2get 
+int nAdders
+int nGetters
+queue toAdd[]        //quanto ogni processo in coda vuole aggiungere
+queue toGet[]
+
+void add(int n, T objects[]){
+    toAdd.enqueue(n)
+    if(buf.size()+toAdd.first()>MAX || nAdders>0){
+        nAdders++
+        ok2add.wait()
+        nAdders--
+    } //se sono fuori dall'attesa allora sono il primo
+    m=toAdd.dequeue()
+    for(i=0; i<m; i++){
+        buf.enqueue(objects[i])
+    }
+    if(buf.size()-toGet.first()>=0){
+        ok2get.signal()
+    }
+}
+
+void get(int n, T objects[]){
+    toGet.enqueue(n)
+    if(nGetters>0 || buf.size()-toGet.first()<0){
+        nGetters++
+        ok2get.wait()
+        nGetters--
+    }
+    m=toGet.dequeue()
+    for(i=0; i<m; i++){
+        objects[i]=buf.dequeue()
+    }
+    if(buf.size()+toAdd.first()<=MAX){
+        ok2add.signal()
+    }
+}
+
+Starvation ❌🍔: se ad esempio il buffer è pieno, non vengono mai fatte get() ma si provano a fare altre add() 
+Deadlock 🦫☠️: se arriva una add che si blocca perché non ci sono abbastanza posti liberi e poi una get che richiede più elementi di quelli disponibili nel buffer 

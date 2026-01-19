@@ -1,0 +1,27 @@
+Esercizio c.1: Scrivere il monitor semdata che implementi un semaforo con dato. Questa astrazione prevede due
+operazioni:
+ datatype dP(void);
+ void dV(datatype data);
+Non è previsto assegmento di valore iniziale nel costruttore, l'invariante è lo stesso dei semafori (con init = 0): ndP <=
+ndV (dove ndP e ndV rappresentano rispettivamente il numero di operazioni dP e dV completate). I dati passati come
+parametro alla dV devono essere memorizzati in ordine LIFO. L'operazione dP restituisce il valore più recente fra quelli
+memorizzati (e lo cancella dalla struttura dati).
+
+monitor semdata:
+
+datatype stack vals
+condition ok2go
+
+
+datatype dP(void){
+    if(vals.size()==0){
+        ok2go.wait()
+    }
+    result=vals.pop()
+    return result
+}
+
+void dV(datatype data){
+    vals.push(data)
+    ok2go.signal()
+}
