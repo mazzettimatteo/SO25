@@ -1,0 +1,59 @@
+Esercizio c.1: Il monitor "semaforo con timeout" semtimeout deve fornire tre procedure entry:
+  void V(void)
+  boolean P(unsigned int timeout)
+  void tick(void)
+Vale l'invariante dei semafori generali. La funzione tick viene richiamata ad ogni millisecondo. Un processo messo in
+attesa a causa di una P attende al massimo il numero di millisecondi indicato nel parametro.
+Se un processo viene riattivato per timeout la P ritorna valore vero, altrimenti falso. Le operazioni V devono riattivare i
+processi in attesa in ordine FIFO.
+Scrivere semtimeout.
+
+monitor semtimeout:
+
+int val
+condition ok2go[]
+int times[]
+int nWaiting
+list procs[]
+bool result[]
+
+__init__(int value){
+    val=value
+    nWaiting=0
+}
+
+boolean P(unsigned int timeout){
+    if(val>0){
+        val--
+    }
+    else{
+        nWaiting++
+        procs.back_insert(getpid)
+        times[getpid()]=timeout
+        result[getpid()]=false
+        ok2go[getpid()].wait()
+        nWaiting--
+    }
+    return results[getpid()]
+}
+
+void tick(void){
+    for p in procs{
+        times[p]--
+        if(times[p]==0){
+            id=procs.remove(p)
+            results[id]=true
+            ok2go[id].signal()
+        }
+    } 
+}
+
+void V(void){
+    if(nWaiting>0){
+        id=procs.remove_first()
+        ok2go[id].signal()
+    }
+    else{
+        val++
+    }
+}

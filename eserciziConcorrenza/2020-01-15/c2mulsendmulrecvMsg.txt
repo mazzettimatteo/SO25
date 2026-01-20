@@ -1,0 +1,45 @@
+Esercizio c.2: Dato un servizio di message passing asincrono scrivere un servizio di message passing sincrono a
+spedizione multipla (senza fare uso di processi server). Devono essere previste due funzioni:
+mulsend(pid_t destination, T msg, int times)
+T mulrecv(pid_t sender)
+La chiamata mulsend spedisce il messaggio msg al processo destination times volte. Solo quando il messaggio è
+stato ricevuto times volte da destination l'esecuzione della funzione mulsend viene completata.
+Il ricevente può indicare il valore zero(ANY) come sender nella mulrecv per indicare che vuole ricevere un messaggio da
+qualsiasi mittente.
+
+mulsend(pid_t destination, T msg, int times){
+    for(i=1;i<=times;i++){
+        asend(<i,times,msg,getpid()>,destination)
+    }
+    ack=arecv(destination)
+}
+
+
+database db[]       //dizionario chiave -> coda di msg
+list msgFromAll
+T mulrecv(pid_t sender){
+    while(true){
+        if(db[sender].size()>0 && sender!=ANY){
+            result=db[sender].dequeue()
+            msgFromAll.remove(result)
+            break;
+        }
+        else if(msgFromAll.size()>0 && sender==ANY){
+            result=removeHead()
+            for k in db.keys{
+                if(db[k].contains(result)){
+                    db[k].dequeue(result)
+                    break;
+                }
+            }
+        }
+        incoming=arecv(ANY)
+        if(incoming.i==incoming.times){
+            //è l'ultimo, ha senso memorizzarlo
+            db[incoming.snd].enqueue(incoming.msg)
+            msgFromAll.tailInsert(incoming.msg)
+            asend(ack,incoming.snd)
+        } 
+    }
+    return result
+}

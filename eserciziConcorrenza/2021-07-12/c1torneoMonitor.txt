@@ -1,0 +1,16 @@
+Esercizio c.1: La fase finale di un torneo sportivo coinvolge 2^N squadre numerate 0, 1 ,... , (2^N)−1 e si svolge ad
+eliminazione diretta. Al primo turno la squadra 0 gioca con la squadra 1, la 2 con la 3 e così via. Al secondo turno la
+vincente fra le squadre 0 e 1 incontra la vincente fra 2, 3 ecc. Il procedimento continua fino ad individuare la sola
+squadra vincente del torneo. Scrivere il monitor torneo. L'attività delle squadre è la seguente:
+ Squadra: process( i,i∈{0, 1 ,..., (2^N)−1 } )
+  for turno in range(1, N):
+   forma = valutaforma(i, turno)
+   if torneo.gioca(i, turno, forma) == False:
+    print(f"la squadra {i} ha perso al {turno} turno")
+    return
+  print(f"la squadra {i} ha vinto il torneo")
+La procedure entry gioca di volta in volta confronta il valore del parametro forma delle due squadre e dichiara
+vincitrice quella con valore massimo, se i valori coincidono decide in modo casuale (rigori).
+Alla squadra vincente viene restituito il valore True, alla perdente il valore False.
+
+ ??????????????????????????????????

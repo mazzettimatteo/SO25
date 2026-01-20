@@ -1,0 +1,85 @@
+Esercizio c.2: Quella che segue vorrebbe essere l'implementazione di un semaforo unfair inizializzato a zero ma è
+errata. Mostrare un caso nel quale il valore del semaforo (value) non venga correttamente mantenuto. Correggere il
+codice usando il passaggio del testimone (passing le batôn).
+
+class: wrongsem
+int value = 0, count = 0
+semaphore mutex init 1;
+semaphore s init 0;
+
+
+void wV():
+    mutex.P()
+    if value == 0 && count > 0:
+        s.V()
+    else:
+        value++
+    mutex.V()
+
+void wP()
+    mutex.P()
+    if value == 0:
+        count++
+        mutex.V()               <---------------------
+        s.P()                   <---------------------
+        mutex.P()
+        count--
+    else:
+        value--
+    mutex.V
+
+se viene chiamata wP all'inizio e wV viene chiamata prima che la wP esegua riga 23 c'è un errore:
+
+All'inizio:
+val=0
+cont=0
+mut=1
+s=0
+Poi faccio wP fino a riga 22:
+mut=0,1
+cont=1
+Adesso arriva wV prima di riga 22:
+mut=0,1
+val=0
+s=1
+E ora arriva un altra wV:
+mut=0,1
+s=2
+Adesso viene eseguita linea 23 di wP
+s=1
+mut=0,1
+cont=0
+Quindi dopo questa esecuzione abbiamo il semaforo s=1 e se ora arriva un altra wP:
+mut=0,1,0
+val=0
+cont=1,0
+s=0 ma non si blocca anche se val era 0
+
+------------------
+
+Proviamo ora a correggerlo:
+
+class: wrongsem
+int value = 0, count = 0
+semaphore mutex init 1;
+semaphore s init 0;
+
+
+void wV():
+    mutex.P()
+    if value == 0 && count > 0:
+        s.V()
+    else:
+        value++
+        mutex.V()
+
+void wP()
+    mutex.P()
+    if value == 0:
+        count++
+        mutex.V()
+        s.P()
+        count--
+    else:
+        value--
+    mutex.V

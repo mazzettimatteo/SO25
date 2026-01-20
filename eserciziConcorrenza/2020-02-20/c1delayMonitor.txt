@@ -12,8 +12,8 @@ Scrivere delay.
 monitor delay:
 
 condition ok2go[]
-int vals[]
-int nWaiting
+array int vals[]
+array int nWaiting
 
 boolean delay(unsigned int timeout){
     if(timeout!=0){

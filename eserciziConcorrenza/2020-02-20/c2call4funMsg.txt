@@ -38,4 +38,4 @@ Server{n:=0 => asend(id=1)}
  V 
 P.call4fun(3){arecv:=9 => return(9)}
 
-quindi call4fun(x) restituisce x^2 se x>0, altrimenti per x<=0 ritorna x
+quindi call4fun(x) restituisce x^2 se x>0, altrimenti per x<=0 ritorna 0
