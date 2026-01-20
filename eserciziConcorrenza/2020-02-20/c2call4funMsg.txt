@@ -1,0 +1,41 @@
+Esercizio c.2: sia dato un sistema di processi a memoria privata che fornisca servizio di message passing asincrono.
+Siano date inoltre la funzione call4fun ed il processo server definite come segue:
+
+def call4fun (x):                                               process server:
+ asend(server, (getpid(), x, 0, 1))                                 forever:
+ return(arecv(server))                                                  (s,n,r,v)=arecv(*)
+                                                                        if(n>0):
+                                                                            asend(sever,(s,n-1,r+v,v+2))
+                                                                        else:
+                                                                           asend(s,r)
+
+Cosa calcola la funzione call4fun e come viene calcolato questo valore?
+
+P.call4fun(3){asend} //id=1
+ |
+ |<id=1,3,0,1>
+ |
+ V 
+Server{n:=3 => asend}
+ |
+ |<id=1,2,1,3>
+ |
+ V 
+Server{n:=2 => asend}
+ |
+ |<id=1,1,4,5>
+ |
+ V 
+Server{n:=1 => asend}
+ |
+ |<id=1,0,9,7>
+ |
+ V 
+Server{n:=0 => asend(id=1)}
+ |
+ |<9>
+ |
+ V 
+P.call4fun(3){arecv:=9 => return(9)}
+
+quindi call4fun(x) restituisce x^2 se x>0, altrimenti per x<=0 ritorna x
