@@ -1,0 +1,50 @@
+Esercizio c.1: Scopo di questo esercizio è di scrivere un monitor pairbuf che implementi un buffer illimitato ad
+accoppiamento. Ogni processo che vuole scrivere un elemento nel buffer chiama la funzione di entrata:
+void put(T x)
+mentre ogni processo che vuole leggere un elemento dal buffer chiama la funzione:
+T get(void)
+Gli elementi devono essere consegnati in ordine FIFO. Sia la get sia la put sono bloccanti. Solo quando il numero degli
+scrittori che hanno chiamato la put è uguale a quello dei lettori che hanno chiamato la get tutti i processi in attesa
+vengono sbloccati.
+Quindi per esempio, se un solo scrittore ha chiamato la put, quando arriva un lettore entrambi vengono sbloccati, e il
+lettore riceverà il valore passato come parametro dallo scrittore. Se vi fossero 10 lettori in attesa occorrono 10 scrittori
+perche' i 20 processi continuino l'esecuzione. Chi ha chiamato la get per primo riceverà il dato passato dal primo
+chiamante della put e così via in ordine FIFO.
+
+monitor pairbuf:
+
+condition ok2get
+condition ok2put
+int nPutters=0
+int nGetters=0
+T queue buf[]
+
+void put(T x){
+    nPutters++
+    buf.enqueue(x)
+    if(nPutters==nGetters){
+        ok2get.signal()
+        ok2put.wait()   //vado in attesa anche io, aspettando che qualcuno mi risvegli
+    }
+    else{
+        ok2put.wait()
+    }
+    //se sono qui allora il lettore(get) mi ha passato il testimone e devo svegliare a cascata gli altri
+    ok2get.signal() 
+    nPutters--
+}
+
+T get(void){    //simmetrica
+    nGetters++
+    if(nPutters==nGetters){
+        ok2put.signal()
+        ok2get.wait()
+    }
+    else{
+        ok2get.wait()
+    }
+    result=buf.dequeue()
+    ok2put.signal()
+    nGetters--
+    return result
+}

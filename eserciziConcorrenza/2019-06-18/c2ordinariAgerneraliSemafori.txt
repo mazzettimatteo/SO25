@@ -1,0 +1,75 @@
+In questa implementazione di semafori generali dati semafori ordinari:
+a) viene usata la tecnica di passaggio del testimone (passing le batôn), spiegare come è usata e quale effetto ha.
+b) questa implementazione non garantisce la FIFONESS di riattivazione dei processi bloccati, mostrare perché.
+c) modificare il codice, mantenendone la struttura, per ottenere una soluzione che risolva il problema del punto 2.
+
+class semaphore:
+  int value;
+  int blocked = 0;
+  binary_semaphore mutex(1);
+  binary_semaphore sem(0);
+
+void init(int initval) {
+  value = initval;
+}
+void P() {
+  mutex.P();
+  if (value == 0) {
+    blocked++;
+    mutex.V();
+    sem.P();
+    blocked--;
+  }
+  value--;
+  mutex.V();
+}
+
+void V() {
+  mutex.P();
+  value++;
+  if (blocked > 0)
+    sem.V();
+  else
+    mutex.V();
+}
+
+a) Il passaggio del testimone inizia nella V(), quando non viene rilasciata la mutua esclusione prima di sbloccare sem: 
+   così facendo, quando si sblocca il processo in attesa siamo sicuri che nessun'altro processo si possa infruffolare facendo una P() 
+   e impedendo che sia quest'ultimo a sbloccarsi ma sia invece uno di quelli già bloccati a venire liberato.
+b) Non è garantita la FIFOness perché se ci sono più processi bloccati non c'è alcuna logica che dica di sbloccare il primo fra di essi ad essersi sbloccato,
+   se ne sblocca uno a caso, non si sa mai quale.
+c)     
+
+class semaphore:
+  int value;
+  int blocked = 0;
+  binary_semaphore mutex(1);
+  queue of binary_semaphore q
+  binary_semaphore sem(0);  //questo non mi serve più
+
+void init(int initval) {
+  value = initval;
+}
+void P() {
+  mutex.P();
+  if (value == 0) {
+    s=new binary_semaphore(0)
+    blocked++;
+    q.enqueue(s)
+    mutex.V();
+    s.P();
+    blocked--;
+  }
+  value--;
+  mutex.V();
+}
+
+void V() {
+  mutex.P();
+  value++;
+  if (blocked > 0)
+    s=q.dequeue()
+    s.V();
+  else
+    mutex.V();
+}

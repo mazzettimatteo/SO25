@@ -1,0 +1,46 @@
+Cosa calcola la funzione dilemma tramite il processo serverproc? Descrivere come avviene il calcolo.
+Se più processi chiamano la funzione dilemma in concorrenza il calcolo avviene in modo corretto? Perché?
+Note: asend/arecv sono le primitive di un sistema di message passing asincrono. La funzione asend ha due parametri: il
+messaggio da inviare e l'identità del processo destinatario. Il parametro della funzione arecv indica il mittente atteso,
+None indica che vengono accettati messaggi da ogni mittente. La funzione getpid restituisce l'identità del processo
+chiamante.
+
+fun dilemma(x):
+    asend((getpid(), x, ""), serverproc)
+    return arecv(serverproc)
+
+serverproc: process
+    while True:
+        (pid, x, y) = arecv(None)
+        if x == "":
+            asend(y, pid)
+        else
+            asend((pid, x[1:], y + x[0]), getpid())
+
+dilemma(x) dove x è una stringa ti restituisce esattamente x:
+
+P.dilemma(ab){asend(Server)} //pid(P)=42
+    |
+    | <42,ab,"">
+    |
+    V
+Server{ab!="" => asend(Server)}
+    |
+    | <42,b,a>
+    |
+    V
+Server{b!="" => asend(Server)}
+    |
+    | <42,"",ab>
+    |
+    V
+Server{""=="" => asend(42)}
+    |
+    |<ab>
+    |
+    V
+P.dilemma{arecv(Server)}
+
+Anche se più processi chiamano dilemma(x) in concorrenza il server non ha problemi perché 
+invia la stringa finale al pid del mittente(che resta sempre memorizzato nel messaggio) e
+perché non vengono usate variabili globali ma solo locali al processo, quindi il server è stateless

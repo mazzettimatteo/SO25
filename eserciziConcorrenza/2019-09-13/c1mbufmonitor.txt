@@ -1,0 +1,63 @@
+Esercizio c.1: Scopo di questo esercizio è di scrivere un monitor mbuf che realizzi un buffer limitato dove ogni elemento
+venga inserito con una molteplicità. In particolare mbuf deve fornire le seguenti procedure entry:
+void add(type data, int n);
+che inserisce il dato data con molteplicità n.
+type get(void);
+che restituisce il primo dato disponibile.
+Il monitor deve soddisfare i seguenti vincoli:
+• il buffer deve contenere al più MAXELEM elementi (ogni operazione add aggiunge un elemento indipendentemente dalla molteplicità n)
+• i dati vengono consegnati in ordine FIFO
+• un dato inserito con molteplicità n deve essere ricevuto da n processi: il monitor deve attendere che n processi
+  chiamino (o abbiano chiamato) la get e a quel punto restituisce il dato a tutti e toglie l'elemento dal buffer. 
+
+monitor mbuf:
+
+int list buf[MAXELEM]  //indicizzata con i datas, contiene le molteplicità rispettive
+condition ok2add
+condition ok2get
+int nWaitingToGet=0
+type results[]
+
+NOTA: buf.sum è la somma dei valori di ogni cella, mentre buf.size=numero di celle occupate
+
+void add(type data, int n){
+    if(buf[data]==NULL && buf.size()+1>MAXELEM){    //se è un data nuovo guardo se ho spazio per inserirlo
+        ok2add.wait()     //se non ho spazio attendo
+    }
+    //posso aggiungere
+    buf[data]+=n
+    //posso fare n signal
+    if(nWaitingToGet<=buf.sum()){//perché quelli in attesa sono al più il numero di elem totali salvati, contati con la loro molteplicità
+        ok2get.signal()
+    }
+}
+
+type get(void){
+    int cont=0
+    nWaitingToGet++
+    if(nWaitingToGet>buf.sum()){   //qui non posso prendere e quindio attendo 
+        ok2get.wait()
+    }
+    //posso estrarre i dati
+    for k in buf.keys{
+        if(nWaitingToGet==0) break;         //se sono finiti quelli che vogliono prendere esco 
+        else if(buf[k]-nWaitingToGet<0){    //se svuotano una cella 
+            for(i=0;i<buf[k].size;i++){     
+                results.enqueue(k)          //salvo tutte le volte che hanno svuotato
+            }
+            nWaitingToGet-=buf[k]   
+            buf[k]=0                        //svuoto la cella
+            cont++                          //conto le cello svuotate
+        }
+        else{   //se non svuotano tutta una cella
+            for(i=0;i<nWaitingToget;i++){   
+                results.enqueue(k)
+            }
+            buf[k]-=nWaitingToGet   //diminuisco la molteplicità di quel data
+        }
+    }
+    for(j=0;j<cont;j++){
+        ok2add.signal()     //per ogni cella svuotata faccio una signal
+    }
+    return results.dequeue()    //restituisco tutti i valori che hanno preso
+}

@@ -1,0 +1,116 @@
+Scopo di questo esercizio è di studiare il comportamento del programma composto dai processi bohm e dal monitor
+m nella colonna di sinistra(prima della linea tratteggiata) e di completare il programma sulla destra(sotto la linea tratteggiata) in modo che abbia lo stesso comportamento ma
+usi i semafori al posto del monitor e che sia minimale in termini di numero di istruzioni e di variabili utilizzate
+
+process bohm[i, i=0,1] {
+    for (;;) {
+        m.pre(i);
+        print(i);
+        m.post(i);
+    }
+}
+
+monitor m:
+condition ok[2];
+state = 0;
+procedure entry pre(int n) {
+    if (state != n)
+        ok[n].wait();
+}
+procedure entry post(int n) {
+    state = 1 - state;
+    ok[state].signal()
+}
+
+
+---------------------------------------------
+
+array of semaphore queues ok[2]
+int state=0
+semaphore mutex(1)
+
+process bohs[i, i=0,1] {
+    for (;;) {
+        pre(i);
+        print(i);
+        post(i);
+    }
+}
+void pre(int n) {
+    mutex.P()
+    if(state!=n){
+        semaphore s(0)
+        ok[n].enqueue()
+        mutex.V()
+        s.P()
+    }
+    else{
+        mutex.V()
+    }
+}
+void post(int n) {
+    mutex.P()
+    state=1-state
+    if(!ok[state].isEmpty()){
+        s=ok[state].dequeue()
+        mutex.V()
+        s.V()
+    }
+    else{
+        mutex.V()
+    }
+}
+
+O SE LO VOGLIAMO PIU' MINIMALE:
+
+Dato che la bohs[0] aspetta sempre che lo stato sia 0 e la la boh[1] che sia 1 al posto delle code di sem posso usare 2 semafori: 
+sem[0] per il processo 0 e sem[1] per il processo 1, otteniamo quindi
+
+semaphore sem[2]={0,0}
+int state=0
+semaphore mutex(1)
+
+process bohs[i, i=0,1] {
+    for (;;) {
+        pre(i);
+        print(i);
+        post(i);
+    }
+}
+void pre(int n) {
+    mutex.P()
+    if(state!=n){
+        mutex.V()
+        sem[n].P()
+    }
+    else{
+        mutex.V()
+    }
+}
+void post(int n) {
+    mutex.P()
+    state=1-state
+    sem[1-n].V()
+    mutex.V()
+}
+
+Notiamo inoltre che il valore dei semafori e l'intero state ci dicono sempre la stessa cosa:
+-state=0, allora il processo 0 può passare
+-sem[0] ha valore 1, allora il processo 0 può passare
+Segue che possiamo rinuovere state e di conseguenza non ci serve più mutex
+
+semaphore sem[2]={1,0}
+
+process bohs[i, i=0,1] {
+    for (;;) {
+        pre(i);
+        print(i);
+        post(i);
+    }
+}
+void pre(int n) {
+    sem[n].P() 
+}
+void post(int n) {
+    sem[1-n].V()
+}
