@@ -1,0 +1,22 @@
+Esercizio c.1: Scrivere il monitor alrv (at least rendez-vous) che fornisce una sola procedure entry:
+procedure entry void at_least(int n)
+Quando un processo chiama la funzione at_least vuol dire che vuole sincronizzarsi con un insieme di almeno n
+processi (incluso il chiamante).
+Esempi:
+Se un processo chiama at_least(1) non si blocca.
+Se il processo p chiama at_least(2) si blocca, se poi il processo q chiama at_least(2) oppure at_least(1) si
+sbloccano sia p sia q (la richiesta di p è soddisfatta, ne aspettava almeno 2, p e q)
+Se il processo p chiama at_least(2) si blocca, se poi il processo q chiama at_least(3) si blocca anch'esso perché
+sebbene la richiesta di p possa essere soddisfatta, q non può ancora sbloccarsi: ci sono solo 2 processi in attesa mentre
+q ne vuole 3. Un terzo processo che chiami at_least(x) con x=1,2,3 li sblocca tutti.
+
+Hint: sia w[k] il numero dei processi in attesa di essere in almeno k (quelli che hanno chiamato at_least(k) e non
+hanno completato l'esecuzione della funzione). Sia s[n]=∑_{k=1}^n w[k] (rappresenta il numero di processi soddisfacibili:
+e.g. se ci sono 4 processi in attesa, potrebbero essere soddisfatte le richieste dei processi che ne aspettano almeno 2,
+almeno 3 o almeno 4). Preso, se esiste, il massimo indice m tale che s[m]≥m tutti i processi in attesa di essere in n,
+per n≤m possono essere sbloccati.
+
+
+
+
+GUARDA SOLUZIONE DI MILINO👨‍💻 SALVATA COME PNG IN QUESTO FOLDER

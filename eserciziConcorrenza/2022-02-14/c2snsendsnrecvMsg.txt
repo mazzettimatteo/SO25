@@ -17,7 +17,9 @@ void snsend(msgtype msg, pid_t dest){
 }
 
 
-<pidtype, msgtype> queue messages
+<pidtype, msgtype> queue messages       
+//meglio non definirla con il nome queue ma sempre con il nome database perché mi sto inventando funzione su di essa e su come navigarla
+//in pratica lo si può immaginare come una linked-list con operazioni di ricerche lineari e di inserimento/rimozione sia in mezzo che in fondo
 
 msgtype snrecv(pid_t sender, int n){
     while(true){
@@ -46,4 +48,38 @@ msgtype snrecv(pid_t sender, int n){
         messages.enqueue(incoming.snd, incoming.msg)
     }
     return result.msg
+}
+
+---------------------------------------------------------------------------------------------------
+SOLUZIONE ALTERNATIVA PIU' SCOMODA CHE NON HO AVUTO VOGLIA DI TERMINARE
+
+Se invece decidessi di usare un database: db[pid_t key] -> queue of <msg_t,int>
+
+void snsend(msgtype msg, pid_t dest){
+    asend(<msg,getpid()>,dest)
+    ack=arecv(dest)
+}
+
+
+database  db[]
+int cont=0
+msgtype snrecv(pid_t sender, int n){
+    while(true){
+        if(sender==ANY){
+            if(n==0){
+                toFind=cont
+                for each key in db.sender{
+                    if(db[k].containsMsgNumer(toFind)){
+                        result=
+                    }
+                }
+            }
+        }
+        else{
+
+        }
+        incoming=arecv(ANY)
+        cont++
+        db[incoming.snd].enqueue(incoming.msg,cont)
+    }
 }

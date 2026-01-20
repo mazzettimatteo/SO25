@@ -1,0 +1,29 @@
+Esercizio c.2: Dato un servizio di message passing sincrono scrivere, senza fare uso di processi server, un servizio di
+message passing sincrono concatenato che abbia le seguenti primitive:
+void chained_send (T msg, list_of_pids dests)
+T chained_recv(void)
+La funzione chained_send deve fare in modo che tutti i processi indicati nella lista dests ricevano il messaggio. Il
+processo che chiama la chained_send si blocca solo fino a quando il primo processo della lista dests non chiama una
+chained_recv, il primo si sblocca quando il secondo chiama la chained_recv e così via.
+( la funzione chained_recv riceve messaggi provenienti da qualsiasi mittente)
+
+void chained_send(T msg, list_of_pids dests){
+    firstDest=dests.removeFirst()
+    ssend(<msg,dests>,firstDest)
+}
+
+
+T chained_recv(void){
+    <msg,dests>=srecv(ANY)
+    if(dests.size()>0){
+        firstDest=dests.removeFirst()
+        ssend(<msg,dests>,firstDest)
+    }
+    //qui dest.size()==0 e posso ritornare    
+    return msg
+}
+
+GEMINI🤖 DICHE CHE LA MIA SOLUZIONE✅ E' PERFETTA👍 E CHE LA SUA BELLEZZA✨ DELLA MIA IMPLEMENTAZIONE🔧 
+STA NEL FATTO CHE HO SFRUTTATO LA NATURA🌲🌿🌳 BLOCCANTE🛑 DELLA SSEND📨.
+SIAMO TUTTI👥👥 MOLTO STANCHI🥱 DI FARE SISTEMI💻 E VOGLIAMO GIOCARE🎮 AD APEX⚔️.
+MILINO👨‍💻 E' UN GATTINO🐈 PANZONE CHE MANGIA TANTI PANINI🍔🥪.
