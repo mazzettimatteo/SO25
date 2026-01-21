@@ -37,7 +37,7 @@ int wait_tick(int nticks){
 
 void tick(void){
     batchSize=nWaiting
-    for each id in vals{
+    for each id in vals.keys{
         vals[id]--
         if(vals[id]==0){
             result.enqueue(batchSize)

@@ -38,8 +38,8 @@ void xsend(msg_t msg, pid_t pid){
 asincrona: se non c'è nessun messaggio da pid (o da chiunque se pid==0), xrecv restituisce NULL, non attende */
 buffer buf[]
 msg_t xrecv(pid_t snd){
+    asend(<NULL,getpid()>,getpid())
     while(true){
-        asend(<NULL,getpid()>,getpid())
         incoming=arecv(ANY)
         if(incoming.pid==getpid()) return NULL
         else{
@@ -58,12 +58,13 @@ buffer buf[]
 int xcount(pid_t snd){
     int contANY=0
     int contSND=0
+    asend(<NULL,getpid()>,getpid())
     while(true){
-        asend(<NULL,getpid()>,getpid())
         incoming=arecv(ANY)
         contANY++
         if(incoming.pid==getpid()) {
             contANY--
+            break;
         }
         else{
             buf.add(incoming.msg)
@@ -72,7 +73,8 @@ int xcount(pid_t snd){
             }
         }
     }
-    result= snd==0 ? contANY : contSND     
+    result= snd==0 ? contANY : contSND  //+ eventualmente il buf.size(snd)   
+    return result  
 }
 
 /*void xexpect(pid_t pid): attende che vi sia almeno un messaggio in attesa di essere ricevuto proveniente da
