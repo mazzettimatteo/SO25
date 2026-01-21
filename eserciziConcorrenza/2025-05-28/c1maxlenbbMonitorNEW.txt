@@ -7,45 +7,35 @@ La funzione get cerca il buffer che contiene più elementi e da questo toglie in
 restituisce.
 In caso più buffer abbiano lo stesso numero massimo di elementi viene scelto il buffer di indice minore.
 
-monitor maxlenbb:
-
-buffer list bufs[N]
-condition ok2add[N]     //buffer[i].size<NELEM
-condition ok2get     //almeno un buff ha size>0 <==> tot>=1
-int totElem         
-
+array of (buffer of objtype) buf[N]
+condition ok2add[]
+condition ok2get
 
 void maxlenbb.add(int bufnum, objtype obj){
-    if(bufs[bufnum].size()>=NELEM){
+    if(buf[bufnum].size()>=NELEM){
         ok2add[bufnum].wait()
     }
-    //qui posso inserire
-    bufs[bufnum].insert[obj]
-    totElem++
+    buf[bufnum].insert(obj)
     ok2get.signal()
 }
 
-objtype maxlenbb.get(){
-    if(tot<1){
+objtype maxlenbb.get(void){
+    idx=getBiggest(buf)
+    if(buf[idx].size()<=0){
         ok2get.wait()
+        idx=getBiggest(buf)
     }
-    //qui c'è almeno un elem da rimuovere e posso sicuramente fare la get
-    i=getBiggestBuf(bufs)
-    object result=bufs[i].removeFirst()
-    totElem--
-    ok2add[i].signal()
+    objtype result=buf[idx].remove()
+    ok2add[idx].signal()
     return result
 }
 
-
-int getBiggestBuf(buffer list bufs){
-    max=bufs[0].size()
-    maxIndex=0
-    for(i=1;i<N;i++){
-        if(buf[i].size()>max){
-            max=buf[i].size()
-            maxIndex=i
+int getBiggest(buffer buf[]){
+    maxIdx=0
+    for(i=0;i<N;i++){
+        if(buf[i].size()>buf[maxIdx].size()){
+            maxIdx=i
         }
     }
-    return maxIndex
+    return maxIdx
 }

@@ -1,0 +1,45 @@
+Esercizio c.1: Scrivere il monitor minlenbb che fornisce le seguenti procedure entry:
+void minlenbb.add(objtype obj)
+objtype minlenbb.get(int bufnum)
+Il monitor gestisce N buffer ognuno dei quali contiene NELEM elementi.
+La funzione add inserisce obj come elemento nel buffer che contiene meno elementi. In caso più buffer abbiano lo
+stesso numero minimo di elementi viene scelto il buffer di indice minore.
+La funzione get prende un elemento dal buffer di indice bufnum
+
+
+monitor minlenbb:
+
+array of (buffer of objtype) buf[N]
+condition ok2add        //singola condizione: la add va fatta sul buffer di size minore, non su quello che si è appena svuotato
+condition ok2get[]      //la get va fatta specifica per ogni buffer, se metto un elem nel buf[i] la get non si può fare su buf[j], con j!=i
+
+
+void minlenbb.add(objtype obj){
+    idx=getSmallest(buf)
+    if(buf[idx].size()>NELEM){
+        ok2add.wait()
+        idx=getSmallest(buf)
+    }
+    buf[idx].insert(obj)
+    ok2get[idx].signal()
+    
+}
+
+objtype minlenbb.get(int bufnum){
+    if(buf[bufnum].size()<=0){
+        ok2get[bufnum].wait()
+    }
+    objtype result=buf[bufnum].remove()
+    ok2add.signal()
+    return result
+}
+
+int getSmallest(buffer buf[]){
+    minIdx=0
+    for(i=0;i<N;i++){
+        if(buf[i].size()<buf[minIdx].size()){
+            minIdx=i
+        }
+    }
+    return minIdx
+}

@@ -13,24 +13,31 @@ di essere elaborate get_request restituisce i dati (argomento data) della prima.
 Dopo che il server ha elaborato la richiesta (funzione process) il risultato viene passsato al monitor tramite la funzione
 send_result che lo restituisce al cliente come valore di ritorno della funzione request
 
-
 monitor cs:
 
-int serverID
-obj queue requests
-condition reqMade
-condition reqLoaded
-condition responseReady[NSERVER]
-obj response
+struct Request{obj data, obj result, condition done}
+queue of Request Q
+condition newReqMade
+Request reqs[NSERVER] //richieste in elaborazione
 
 obj request(data){
-  if(requests.size()==0){
-    requestMade.wait()
-  }
+  r=new Request() //creo una nuova richiesta, fornendo i dati iniziali, mettendola in coda e mettendola poi in attesa di completamento
+  r.data=data
+  r.condition=new condition()
+  Q.enqueue(r)
+  newReqMade.signal()
+  r.condition.wait()
+  return r.result 
 }
 obj get_request(int i){
-  
+  if(Q.isEmpty()){  //se non ci sono richieste attendi
+    newReqMade.wait()
+    r=Q.dequeue() //prendi la prima richiesta fatta
+    reqs[i]=r //mettila in elaborazione
+  }
+  return r.data
 }
 void send_result(int i, obj data){
-
+  reqs[i].result=data //metti il risultato dell'elaborazione nella richiesta giusta
+  reqs[i].condition.signal() //avvisa che hai completato la richiesta
 }

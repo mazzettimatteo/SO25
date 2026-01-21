@@ -1,0 +1,41 @@
+Esercizio c.1: Il monitor swapobj ha due procedure entry:
+void swapa(obj_t *in, obj_t *out);
+void swapb(obj_t *in, obj_t *out);
+I processi di tipo A chiamano la swapa e quelli di tipo B chiamano la swapb. In ordine FIFO i processi che chiamano la
+swapa e quelli che chiamano la swapb copiano vicendevolmente il valore degli oggetti passati come parametro:
+Il primo processo che chiama la swapa copia il valore del proprio parametro out nel parametro in del primo processo
+che ha chiamato la swapb e viceversa (copia il parametro out del primo swapb nel parametro in del primo swapa).
+Similmente devono fare il secondo processo che chiama swapa con secondo che chiama swapb e così via.
+
+monitor swapobj:
+
+condtition ok2swapA
+condtition ok2swapB
+int nA
+int nB
+queue of obj_t valA
+queue of obj_t valB
+
+void swapa(obj_t *in, obj_t *out){
+    nA++
+    if(nB==0){
+        ok2swapA.wait()
+    }
+    //posso fare lo scambio
+    valA.enqueue(*in)
+    ok2swapB.signal()
+    *out=valB.dequeue()
+    nA--
+}
+
+void swapb(obj_t *in, obj_t *out){
+    nB++
+    if(nA==0){
+        ok2swapB.wait()
+    }
+    //posso fare lo scambio
+    valB.enqueue(*in)
+    ok2swapA.signal()
+    *out=valA.dequeue()
+    nB--
+}

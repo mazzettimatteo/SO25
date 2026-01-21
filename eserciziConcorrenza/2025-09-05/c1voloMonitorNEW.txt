@@ -1,0 +1,60 @@
+Esercizio c.1: Per poter partire un passeggero di uno specifico volo esegue i passi seguenti:
+fila = volo.checkin() // al check-in viene attribuito il posto (il numero della fila va da 1 a 20,
+ // 5 posti per fila), se i posti sono esauriti si attende per fare checkin
+ // sul prossimo volo
+… va al gate
+volo.imbarco(fila) // il passeggero si può imbarcare quando consentito dal personale di terra
+… sali sull’aereo
+volo.a_bordo() // il passeggero è a bordo.
+Mentre il personale di terra quando l’aereo è al gate, volendo imbarcare i passeggeri dal fondo esegue il seguente
+codice:
+for (i = 20; i > 0; i--)
+ volo.chiama(i) //tutti i passeggeri delle file >= i possono imbarcarsi
+ … attendi
+volo.imbarco_completo() // la funzione attende il completamento dell’imbarco: l’aereo puo’
+ partire solo quando tutti i passeggeri passati al checkin sono a bordo
+Scrivere il monitor volo.
+
+monitor volo:
+
+int nCheckedIn
+int currRow
+int nOnBoard
+
+condition c1    //se il volo è pieno: nCheckedIn==100
+condition c2    //se è stata chiamata la mia fila: miaFila>=currRow
+condition c3    //sono tutti a bordo: nOnBoard==nCheckedIn
+
+int checkin(){
+    if(nCheckedIn==100){
+        c1.wait()
+    }
+    nCheckedIn++
+    return (nCheckedIn/5)+1
+}
+
+void imbarco(int fila){
+    if(fila<currRow){
+        c2.wait()
+    }
+}
+
+void a_bordo(){
+    nOnBoard++
+    if(nOnBoard==nCheckedIn){
+        c3.signal()
+    }
+}
+
+void chiama(int i){
+    currRow=i
+    c2.signal()
+}
+
+void imbarco_completo(){
+    if(nOnBoard<nCheckedIn){
+        c3.wait()
+    }
+    nCheckedIn=0
+    currRow=
+}
