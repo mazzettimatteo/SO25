@@ -1,0 +1,43 @@
+Esercizio c.2: Dato un servizio di message passing asincrono implementare un servizio di message passing
+asincrono a selezione di mittenti (samp) senza fare uso di processi server.
+Il servizio samp ha due primitive:
+sasend(message , destination)
+sarecv(senders)
+dove senders è un insieme.
+la sarecv restituisce il primo messaggio che uno dei processi in senders ha spedito al processo ricevente
+usando la sasend (o spedito da qualsiasi processo se senders è vuoto).
+
+
+
+sasend(message , destination){
+    asend(<message,getpid()>,destination)
+}
+
+
+database db   //db[pid_t key]->queue of msg_t sent by key
+queue of <msg_t,pid_t> fromAll 
+
+sarecv(senders){    //senders è una lista di pid_t
+    while(true){
+        if(senders.isEmpty()){              //caso ANY
+            if(fromAll.size()>0){
+                <result,snd>=fromAll.dequeue()  //prendo il primo msg arrivato
+                _=db[snd].dequeue()             //lo tolgo dalla coda
+                return result
+            }               
+        }   
+        else{
+            for each s in senders{
+                if(db[s].size()>0){     //guardo se mi è arrivato un messaggio da uno dei sender
+                    result=db[s].dequeue()  //in tal caso lo rimuovo
+                    fromAll.removeMsgFrom(result,s)
+                    return result;          //e lo ritorno\
+                }
+            }
+        }
+        incoming=arecv(ANY)
+        db[incoming.snd].enqueue(incoming.msg)      //memorizzo nel database
+        fromAll.enqueue(incoming.msg,incoming.snd)  //memorizzo nella lista che contiene tutti i msg, per il caso ANY
+    }
+}
+

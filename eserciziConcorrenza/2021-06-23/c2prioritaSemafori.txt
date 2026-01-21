@@ -1,0 +1,51 @@
+Esercizio c.2: Implementare usando semafori ordinari (fair, fifo) un servizio di semafori a priorità lifo che
+fornisca le seguenti primitive:
+ void PLP(int prio);
+ void PLV()
+PLP e PLV si devono comportare rispettivamente come P e V. Quando la PLV deve riattivare un processo
+sceglie fra quelli in attesa quello a priorità massima, nel caso siano presenti più processi a priorità massima
+sceglie quello in attesa da meno tempo. 
+
+
+dictionary of (stack of sem) dict   //dict[int prio]->stack of sems
+int val
+sem mutex=new sem(1)
+
+void __init__(int value){
+    val=value
+}
+
+void PLP(int prio){
+    mutex.P()
+    if(val>0){
+        val--
+        mutex.V()
+    }
+    else{
+        sem s=new sem(0)
+        dict[prio].push(s)
+        mutex.V()
+        s.P()
+    }
+}
+
+void PLV(){
+    mutex.P()
+    maxP=getHighestPrio(dict)
+    if(dict[maxP].size()==0){
+        val++
+    }
+    else{
+        sem s=dict[maxP].pop()
+        s.V()
+    }
+    mutex.V()
+}
+
+int getHighestPrio(dictionary dict){
+    maxP=-999
+    for each k in dict.keys{
+        maxP=max(k,maxP)
+    }
+    return maxP
+}
