@@ -1,0 +1,39 @@
+Esercizio c.1: Un semaforo pesato è una struttura di sincronizzazione con due primitive P(w) e V(w) (oltre al costruttore
+di inizializzazione). I parametri delle operazioni P e V sono i pesi dell'operazione. L'invariante dei semafori pesati
+richiede che la somma dei pesi delle operazioni P completate sia sempre inferiore o uguale alla somma dei pesi delle
+operazioni V completate più il valore di inizializzazione. Scrivere il monitor wsem in grado di implementare un semaforo
+pesato fair: i processi che si bloccano a causa di una P che invaliderebbe l'invariante devono essere riattivati nell'ordine
+in cui sono stati sospesi (FIFO).
+INVARIANTE: wP <= wV 
+
+
+monitor wsem:
+
+int val //wV-wV
+condition c 
+int nWaiting
+
+void __init__(){
+    wP=0
+    wP=0
+}
+
+void P(w){
+    if(val-w>0){
+        val-=w
+    }
+    else{
+        nWaiting++
+        c.wait()
+        nWaiting--
+    }
+}
+
+void V(w){
+    if(nWaiting==0){
+        val+=w
+    }
+    else{
+        c.signal()
+    }
+}

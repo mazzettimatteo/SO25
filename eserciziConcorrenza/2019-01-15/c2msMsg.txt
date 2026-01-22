@@ -1,0 +1,59 @@
+Esercizio c.2: Dato un servizio di message passing asincrono e senza fare uso di processi server:
+a) implementare un servizio di message passing sincrono a ricezione multipla. Questo servizio prevede due funzioni
+con la seguente interfaccia:
+    ms_send(pid dest, msg_t msg)
+    ms_recv(int n, pid *senders, msg_t *msgs)
+L'operazione di ricezione deve attendere n messaggi, provenienti dai mittenti indicati nel vettore senders (ogni
+elemento può essere ANY/*) e metterli ordinatamente nel vettore msgs (entrambi i vettori saranno stati
+opportunamente allocati e dimensionati dal chiamante). I processi mittenti degli n messaggi devono rimanere in
+attesa fino a che la ms_recv non può essere completata.
+b) analizzare i casi di deadlock che possono accadere in base alla definizione del servizio di message passing sincrono
+a ricezione multipla.
+
+
+ms_send(pid dest, msg_t msg){
+    asend(<msg,getpid()>,dest)
+    ack=arecv(dest)
+}
+
+
+database db: coda di <msg_t,pid>
+ms_recv(int n, pid *senders, msg_t *msgs){
+    pid mittenti[]          //copio senders per sicurezza
+    for each s in senders{
+        mittenti=s
+    }
+    while(true){
+        asend(<TAG,getpid()>,getpid())  //mi mando un TAG
+        while(true){    //e memorizzo tutto fino a quel TAG
+            incoming=arecv(ANY)
+            if(incoming.snd==getpid() && incoming.msg==TAG) break;            
+            db.enqueue(incoming.snd, incoming.msg)
+        }
+        //inizio a riempire la lista di messaggi da ritornare
+        for each s in mittenti{
+            if(s==ANY){ //se il destinatario richiesto è ANY
+                if(db.size()>0){    //se posso ci metto un messaggio
+                    msgs.append(db.removeFirst())
+                    mittenti.headRemove()
+                }
+                else break; //altrimenti smetto di riempire e ricomincerò a memorizzare
+            }
+            else{   //se il destinatario è specificato
+                if(db.size(s)>0){
+                    msgs.append(db.removeFirstFrom(s))  //se posso prendo da lui
+                    mittenti.headRemove()
+                }
+                else break; //altrimenti smetto di inserire
+            }
+        }
+        if(msgs.size()==n){
+            for each s in senders{
+                asend(ack,s)
+            }
+            break; //smetto perché ho riempito l'array da restituire
+        } 
+    }
+}
+
+Ovvio DEADLOCK se il processo P chiama send su Q e Q chiama send su P: nessuno manderà/riceverà mai l'ACK

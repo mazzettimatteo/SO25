@@ -1,0 +1,40 @@
+Esercizio c.1: Definiamo col nome di semaforo monobinario un semaforo che può assumere solamente i valori zero e uno.
+Come un semaforo binario ordinario una operazione monoP quando il semaforo ha valore zero deve bloccare il
+processo chiamante, altrimenti porta il valore del semaforo da 1 a 0. 
+Quando il valore del semaforo è zero, una operazione monoV sblocca il primo processo bloccato, se ve ne sono, 
+altrimenti porta il valore da 0 a 1.
+Una operazione monoV su un semaforo monobinario che ha valore 1 non produce alcun effetto. 
+Scrivere il monitor monobinarysem che implementi i metodi monoP e monoV
+
+monitor monobinarysem:
+
+int val
+int nWaiting
+condition c 
+
+void __init__(int v){
+    val=v   //v must be either 0 or 1
+    nWaiting=0
+}
+
+void monoP(){
+    if(val>0){
+        val--
+    }
+    else{
+        nWaiting++
+        c.wait()
+        nWaiting--
+    }
+}
+
+void monoV{
+    if(val==0){
+        if(nWaiting>0){
+            c.signal()
+        }
+        else{
+            val++
+        }
+    }
+}

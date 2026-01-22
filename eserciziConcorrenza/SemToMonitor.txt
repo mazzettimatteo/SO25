@@ -1,0 +1,78 @@
+MONITOR->SEMAFORI
+
+monitor sem:
+
+condition c;
+int val
+int nWaiting
+
+void __init__(int v){
+    val=v
+    nWaiting=0
+}
+
+void P(){
+    if(val>0){
+        val--
+    }
+    else{
+        nWaiting++
+        c.wait()
+        nWaiting--
+    }
+}
+
+void V(){
+    if(nWaiting==0){
+        val++
+    }
+    else{
+        c.signal()
+    }
+}
+
+SEMAFORI->MONITOR
+
+sem mutex=new sem(1)
+array of (queue of sem) waiting
+stack urgent
+
+
+Entrata nel Monitor{
+    mutex.P()
+}
+
+Wait su condition[i]{
+    sem ws= new sem(0)
+    waiting[i].enqueue(ws)
+    if(urgent.isEmpty()){
+        mutex.V()
+    }
+    else{
+        sem s=urgent.pop()
+        s.V()
+    }
+    ws.P()
+    free(ws)
+}
+
+Signal su condition[i]{
+    if(!waiting[i].isEmpty()){
+        sem ws=waiting[i].dequeue()
+    }
+    sem s=new sem(0)
+    urgent.push(s)
+    ws.V()
+    s.P()
+    free(s)
+}
+
+Uscita dal monitor{
+    if(urgent.isEmpty()){
+        mutex.V()
+    }
+    else{
+        sem s=urgent.pop()
+        s.V( )
+    }
+}

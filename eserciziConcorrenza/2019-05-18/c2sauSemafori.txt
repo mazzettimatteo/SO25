@@ -1,0 +1,45 @@
+Esercizio c.2: Una sezione-acritica-unificante (SAU) è una sequenza di istruzioni che può essere eseguita
+contemporaneamente da più processi, ma i processi possono uscirne solo quanto tutti i processi che stanno
+eseguendo la SAU ne completano l'esecuzione.
+Ogni processo chiama:
+    SAU_enter()
+    ... codice SAU
+    SAU_exit()
+Scrivere le funzioni SAU_enter e SAU_exit mediante l'uso di semafori.
+
+sem mutex=new sem(1)
+nEntered=0
+nCompleted=0
+queue of sem q
+
+void SAU_enter(){
+    mutex.P()
+    nEntered++
+    mutex.V()
+    
+}
+void SAU_exit(){
+    mutex.P()
+    nCompleted++
+    if(nCompleted==nEntered){
+        while(!q.isEmpty()){
+            sem myS=q.dequeue()
+            myS.V()
+            nCompleted--
+            nEntered--
+        }
+        nCompleted--
+        nEntered--
+        mutex.V()
+    }
+    else{
+        sem s=new sem(0)
+        q.enqueue(s)
+        mutex.V()
+        s.P()
+        
+    }
+    
+    
+
+}

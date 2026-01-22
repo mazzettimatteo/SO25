@@ -11,3 +11,22 @@ msg_t nbreceive(pid_t sender):
             break;
         db.add(snd. msg)
     return db.get(sender) --- se non c'e' restituisce NONE
+
+dato msg passing completamente asincrono -> msgpass asincrono
+
+asend(msg_t msg, pid_t dest){
+    casend(<msg, getpid()>,dest)
+}
+
+arecv(pid_t sender){
+    while(true){
+        if(db[sender].size()>0){
+            break;
+        }
+        incoming=nbrecieve(ANY)
+        if(incoming!=NULL){
+            db[incoming.snd].enqueue(incoming.msg)
+        }
+    }
+    return db[sender].dequeue()
+}

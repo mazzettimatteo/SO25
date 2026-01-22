@@ -1,0 +1,22 @@
+Esercizio c.2: Sia dato un servizio di message passing asincrono. Senza fare uso di processi server implementare un
+servizio di message passing parzialmente sincrono (nel quale l'operazione pssend blocchi il chiamante fino ad
+avvenuta ricezione del messaggio e la operazione psreceive non sia bloccante, quindi deve ritornare immediatamente
+"None" se non è stato ricevuto alcun messaggio corrispondente alle richieste).
+
+void pssend(msg_t msg, pid_t dest){
+    asend(<msg,getpid()>,dest)
+    ack=arecv(dest)
+}
+
+msg_t psreceive(pid_t sender){
+    asend(<TAG,getpid()>,getpid())
+    while(true){
+        incoming=arecv(ANY)
+        if(incoming.snd==getpid() && incoming.msg==TAG){
+            break;
+        }
+        db[incoming.snd].enqueue(incoming.msg)
+        asend(ACK,incoming.snd)
+    }
+    retrun db[sender].dequeue()     //ritorna NULL se la coda corrispondente è vuota
+}
