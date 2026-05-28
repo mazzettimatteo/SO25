@@ -1,3 +1,4 @@
+#RICORDA DI FARE: $conda activate SO25
 import os
 import sys
 #import subprocess
