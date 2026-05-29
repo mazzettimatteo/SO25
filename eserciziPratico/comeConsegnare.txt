@@ -1,0 +1,15 @@
+ Esercizio 0 (“Se copiate, vi cacciamo”)
+
+Rendete la vostra directory home inaccessibile ad altri utenti (sia in lettura che in esecuzione). Si puo’
+tenere una sola directory in /public che abbia come nome il vostro username e.g.
+“/public/giovanni.rossi” e che abbia permessi 700
+
+chmod 700 ~
+mkdir -p /public/$USER
+chmod 700 /public/$USER
+
+Se volete che il vostro lavoro venga giudicato, lasciate aperta la vostra sessione (incluso il vostro editor)
+e una finestra terminale che mostri l'output del comando sha1sum di tutti i file consegnati 
+e lasciate il laboratorio. Verrete richiamati uno alla volta per una breve discussione sul vostro elaborato.
+
+sha1sum *.c *.py *.sh
