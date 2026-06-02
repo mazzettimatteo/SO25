@@ -1,0 +1,2 @@
+Ecco un path a caso trovato in questa directory:
+/home/mazzetti/Desktop/uni/SO25/eserciziPratico/2025-05-29/es2c/test_drec_dir/file_bersaglio.txt
