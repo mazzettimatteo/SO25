@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "[testprog] Eseguito in directory: $(pwd)"
+echo "[testprog] Argomenti ricevuti: $@"
