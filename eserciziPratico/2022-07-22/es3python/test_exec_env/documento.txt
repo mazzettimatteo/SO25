@@ -1,0 +1,2 @@
+Questo e' un semplice file di testo.
+Non contiene shebang e non e' un eseguibile.
