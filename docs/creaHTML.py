@@ -1,6 +1,6 @@
 import os
 
-directory_appunti = "./.." 
+directory_appunti = "./eserciziPratico" 
 file_output_index = "index.html"
 
 def get_html_inizio(titolo_pagina, titolo_h1):
