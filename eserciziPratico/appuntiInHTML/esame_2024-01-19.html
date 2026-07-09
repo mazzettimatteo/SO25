@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2024-01-19</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2024-01-19</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#argrecv-c">argrecv.c</a></li>
+                <li><a href="#argsend-c">argsend.c</a></li>
+                <li><a href="#tcmp-py">tcmp.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="argrecv-c">
+            <h2>File: argrecv.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+
+/*Scrivere un programma argsend che converta i parametri del programma (da argv[1] in poi) in una
+unica sequenza di caratteri: vengono concatenati i parametri (compreso il terminatore della stringa).
+Esempio di funzionamento:
+$ ./argsend ls -l /tmp | od -c
+0000000 l s \0 - l \0 / t m p \0
+0000013
+Scrivere un secondo programma argrecv che preso in input l'output di argsend esegua il comando
+con gli argomenti passati a argsend. Per esempio:
+$ ./argsend ls -l /tmp | ./argrecv
+total 8988
+-rw-r--r-- 1 renzo renzo 150532 Jan 9 16:57 ....
+.....*/
+
+
+
+//RECIEVER
+int main(int argc, char * argv[]){
+
+    char buf[1024]={0};
+    int currSize=0;
+
+    int len=read(STDIN_FILENO, buf, sizeof(buf));
+    if(len&lt;0) return 1;
+
+    char * newArgv[1024];
+    int argCont=0;
+
+    newArgv[0]=&amp;buf[0];
+    argCont++;
+    for(int i=1; i&lt;len -1; i++){
+        if(buf[i]=='\0'){
+            newArgv[argCont]=&amp;buf[i+1];
+            argCont++;
+        }
+    }
+
+    newArgv[argCont]=NULL;
+
+    execvp(newArgv[0], newArgv);
+
+    
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="argsend-c">
+            <h2>File: argsend.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+
+/*Scrivere un programma argsend che converta i parametri del programma (da argv[1] in poi) in una
+unica sequenza di caratteri: vengono concatenati i parametri (compreso il terminatore della stringa).
+Esempio di funzionamento:
+$ ./argsend ls -l /tmp | od -c
+0000000 l s \0 - l \0 / t m p \0
+0000013
+Scrivere un secondo programma argrecv che preso in input l'output di argsend esegua il comando
+con gli argomenti passati a argsend. Per esempio:
+$ ./argsend ls -l /tmp | ./argrecv
+total 8988
+-rw-r--r-- 1 renzo renzo 150532 Jan 9 16:57 ....
+.....*/
+
+//SENDER
+int main(int argc, char * argv[]){
+
+    int currSize=0;
+
+    char buf[1024]={0};
+    for(int i=1;i&lt;argc;i++){
+        for(int j=0; j&lt;strlen(argv[i])+1;j++){ //+1 perché altrimenti esclude il terminatore
+            buf[currSize]=argv[i][j];
+            currSize++;
+        }
+    }
+
+    write(STDOUT_FILENO, buf, currSize); //Non si può usare printf perché quella termina appena incontra il primo "\0"
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tcmp-py">
+            <h2>File: tcmp.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma python o uno script bash chiamato tcmp che confronti gli alberi del file
+system di due directory.. A seconda del parametro deve elencare i pathname di file e di directory che
+• sono comuni ad entrambi i sottoalberi, se manca il parametro
+• esistono solo nel primo sottoalbero, se il parametro è -1
+• esistono solo nel secondo sottoalbero se il parametro è -2
+esempi:
+$ . /tcmp dir1 dir2
+stampa l'elenco dei path che esistono sia in dir1 sia in dir2
+$ . /tmcp -1 dir1 dir2
+stampa l'elenco dei path che esistono in dir1 ma non in dir2"""
+
+def main():
+    argc=len(sys.argv)
+    if(argc&lt;3):
+        print("Use: python tcmp.py &lt;dir1&gt; &lt;dir2&gt; [-1|-2]")
+        exit(1)
+
+    content1=[] 
+    for root,dirs,files in os.walk(sys.argv[1]):
+        for d in dirs:
+            dPath = os.path.join(root, d)
+            content1.append(os.path.relpath(dPath, sys.argv[1]))
+    
+        for f in files:
+            fPath=os.path.join(root,f)
+            content1.append(os.path.relpath(fPath,sys.argv[1]))
+
+
+    content2=[] #coppie inode, path
+    for root,dirs,files in os.walk(sys.argv[2]):
+        for d in dirs:
+            dPath = os.path.join(root, d)
+            content2.append(os.path.relpath(dPath, sys.argv[2]))
+
+        for f in files:
+            fPath=os.path.join(root,f)
+            content2.append(os.path.relpath(fPath, sys.argv[2]))
+
+
+    if(argc==3):
+        for c in content1:
+            if c in content2:
+                print(c)
+    elif(sys.argv[3]=="-1"):
+        for c in content1:
+            if c not in content2:
+                print(c)
+    elif(sys.argv[3]=="-2"):
+        for c in content2:
+            if c not in content1:
+                print(c)
+    
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    test_dir = "test_tcmp_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+        
+    dir1 = os.path.join(test_dir, "dir1")
+    dir2 = os.path.join(test_dir, "dir2")
+
+    # --- Creazione struttura per dir1 ---
+    os.makedirs(os.path.join(dir1, "cartella_comune"))
+    os.makedirs(os.path.join(dir1, "cartella_solo_dir1"))
+    
+    # File in comune
+    with open(os.path.join(dir1, "file_comune.txt"), "w") as f: f.write("comune")
+    with open(os.path.join(dir1, "cartella_comune", "file_interno_comune.txt"), "w") as f: f.write("comune")
+    
+    # File solo in dir1
+    with open(os.path.join(dir1, "file_solo_1.txt"), "w") as f: f.write("solo 1")
+    with open(os.path.join(dir1, "cartella_comune", "file_interno_solo_1.txt"), "w") as f: f.write("solo 1")
+
+
+    # --- Creazione struttura per dir2 ---
+    os.makedirs(os.path.join(dir2, "cartella_comune"))
+    os.makedirs(os.path.join(dir2, "cartella_solo_dir2"))
+    
+    # File in comune
+    with open(os.path.join(dir2, "file_comune.txt"), "w") as f: f.write("comune")
+    with open(os.path.join(dir2, "cartella_comune", "file_interno_comune.txt"), "w") as f: f.write("comune")
+    
+    # File solo in dir2
+    with open(os.path.join(dir2, "file_solo_2.txt"), "w") as f: f.write("solo 2")
+    with open(os.path.join(dir2, "cartella_comune", "file_interno_solo_2.txt"), "w") as f: f.write("solo 2")
+
+    print(f"Ambiente di test creato con successo in: {test_dir}\n")
+    
+    print("--- COMANDI PER TESTARE E RISULTATI ATTESI ---")
+    
+    print("\n1. Comando senza parametri (Elementi in COMUNE):")
+    print(f"   python tcmp.py {dir1} {dir2}")
+    print("   RISULTATO ATTESO:")
+    print("   cartella_comune")
+    print("   file_comune.txt")
+    print("   cartella_comune/file_interno_comune.txt")
+    
+    print("\n2. Comando con parametro -1 (Elementi SOLO IN DIR1):")
+    print(f"   python tcmp.py -1 {dir1} {dir2}")
+    print("   RISULTATO ATTESO:")
+    print("   cartella_solo_dir1")
+    print("   file_solo_1.txt")
+    print("   cartella_comune/file_interno_solo_1.txt")
+    
+    print("\n3. Comando con parametro -2 (Elementi SOLO IN DIR2):")
+    print(f"   python tcmp.py -2 {dir1} {dir2}")
+    print("   RISULTATO ATTESO:")
+    print("   cartella_solo_dir2")
+    print("   file_solo_2.txt")
+    print("   cartella_comune/file_interno_solo_2.txt")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

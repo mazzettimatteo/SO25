@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2025-07-23</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2025-07-23</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#dremcont-py">dremcont.py</a></li>
+                <li><a href="#setup_dremcont_test-py">setup_dremcont_test.py</a></li>
+                <li><a href="#sha1diff-c">sha1diff.c</a></li>
+                <li><a href="#sha1dir-c">sha1dir.c</a></li>
+                <li><a href="#sha1dir-c">sha1dir.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="dremcont-py">
+            <h2>File: dremcont.py</h2>
+            <pre><code class="language-python">
+import os
+import sys
+import filecmp
+
+"""Scrivere un programma Python o uno script bash dremcont.
+dremcont ha due parametri: un file f e una directory d. Tutti i file nella directory d e nelle sue
+sottodirectory che hanno contenuto uguale a f devono essere cancellate."""
+
+def main():
+    if(len(sys.argv)!=3):
+        print("Use: python dremcont.py &lt;file&gt; &lt;dir/&gt;")
+    target=os.path.abspath(sys.argv[1])
+    directory=os.path.abspath(sys.argv[2])
+    removedFiles=[]
+    remainingFiles=[]
+
+    for root, dirs, files in os.walk(directory):
+        for f in files:
+            fPath=os.path.join(root, f)
+            if(filecmp.cmp(target, fPath, shallow=False)): 
+                #Shallow=false permette di confrontare tutto il contenuto, altrimenti filecmp contronta solo le os.stat 
+                removedFiles.append(fPath)
+                os.remove(fPath)
+            else:
+                remainingFiles.append(fPath)
+
+    print("Remove files that are identical to: ", sys.argv[1])
+    for file in removedFiles:
+        print(file)
+    print("Remainig files: ")
+    for file in remainingFiles:
+        print(file)
+
+
+
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="setup_dremcont_test-py">
+            <h2>File: setup_dremcont_test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+# Configurazione
+TARGET_FILE = "file_riferimento.txt"
+TEST_DIR = "test_dir_dremcont"
+TARGET_CONTENT = "Questo e' il contenuto esatto da cercare e distruggere.\n"
+DIFFERENT_CONTENT = "Questo contenuto e' innocuo e deve sopravvivere.\n"
+
+def setup_test_env():
+    # Pulizia ambiente precedente
+    if os.path.exists(TEST_DIR):
+        shutil.rmtree(TEST_DIR)
+    if os.path.exists(TARGET_FILE):
+        os.remove(TARGET_FILE)
+
+    # Creazione file target (f)
+    with open(TARGET_FILE, "w") as f:
+        f.write(TARGET_CONTENT)
+
+    # Creazione struttura directory (d)
+    os.makedirs(os.path.join(TEST_DIR, "subdir1"))
+    os.makedirs(os.path.join(TEST_DIR, "subdir2", "subdir3"))
+
+    # Creazione file da eliminare (stesso contenuto)
+    files_to_delete = [
+        os.path.join(TEST_DIR, "file_uguale_1.txt"),
+        os.path.join(TEST_DIR, "subdir1", "file_uguale_2.txt"),
+        os.path.join(TEST_DIR, "subdir2", "subdir3", "file_uguale_3.txt")
+    ]
+    for filepath in files_to_delete:
+        with open(filepath, "w") as f:
+            f.write(TARGET_CONTENT)
+
+    # Creazione file da mantenere (contenuto diverso)
+    files_to_keep = [
+        os.path.join(TEST_DIR, "file_diverso_1.txt"),
+        os.path.join(TEST_DIR, "subdir1", "file_diverso_2.txt"),
+        os.path.join(TEST_DIR, "subdir2", "file_diverso_3.txt")
+    ]
+    for filepath in files_to_keep:
+        with open(filepath, "w") as f:
+            f.write(DIFFERENT_CONTENT)
+
+    print("Ambiente di test generato con successo.\n")
+    print("-" * 50)
+    print("ISTRUZIONI PER IL TEST:")
+    print(f"File parametro (f): {TARGET_FILE}")
+    print(f"Directory parametro (d): {TEST_DIR}\n")
+    print("Comando da eseguire:")
+    print(f"python3 dremcont.py {TARGET_FILE} {TEST_DIR}")
+    print("-" * 50)
+    print("RISULTATO ATTESO DOPO L'ESECUZIONE:\n")
+    print("I seguenti file devono ESSERE CANCELLATI:")
+    for fp in files_to_delete:
+        print(f" [X] {fp}")
+    print("\nI seguenti file devono RIMANERE INTACTI:")
+    for fp in files_to_keep:
+        print(f" [V] {fp}")
+
+if __name__ == "__main__":
+    setup_test_env()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="sha1diff-c">
+            <h2>File: sha1diff.c</h2>
+            <pre><code class="language-c">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+
+int sha1(char * filepath, char outputBuf[41]){
+
+    char command[1024]={0};
+    snprintf(command, sizeof(command), "sha1sum '%s'", filepath);
+
+    FILE *fp=popen(command, "r"); //pipeopen
+    if(fp==NULL){
+        //Errore in popen
+        return -1;
+    }
+
+    char buf[256];
+
+    if(fgets(buf, sizeof(buf), fp)!=NULL){
+        strncpy(outputBuf, buf, 40);
+        outputBuf[40]='\0';
+    }
+    else{
+        pclose(fp);
+        return -1;
+    }
+
+    pclose(fp);
+
+    return 0;
+
+}
+
+/*Scrivere un programma sha1dir con due argomenti:
+il primo è il pathname di una directory, il secondo un pathname inesistente dove poter creare una
+directory.
+Il programma deve ricostruire nella directory creata una struttura ad albero identica a quella che ha
+come radice il primo parametro. I nodi che nell'albero della prima directory sono file regolari
+corrispondono nel secondo albero a file che contengono la hash sha1 del file della primo albero.*/
+
+/*Scrivere un programma sha1diff che usando gli stessi parametri
+passati precedentemente al programma sha1dir dell'esercizio 1 e mette in output l'elenco dei file che
+sono stati modificati (la hash sha1 non corrisponde).*/
+
+void recursiveTree(const char *sourceDir, const char *destDir){
+
+    DIR * dir=opendir(sourceDir);
+    struct dirent *dp;
+    struct stat statBuf;
+
+    while((dp=readdir(dir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char sourcePath[4096];
+        snprintf(sourcePath, sizeof(sourcePath), "%s/%s", sourceDir, dp-&gt;d_name);
+
+        char destPath[4096];
+        snprintf(destPath, sizeof(destPath), "%s/%s", destDir, dp-&gt;d_name);
+
+
+        stat(sourcePath,&amp;statBuf);
+        if(S_ISREG(statBuf.st_mode)){
+            char sourceSha[41]={0};
+            char cloneSha[41]={0};
+            int f=open(destPath, O_RDONLY);
+            if(f!=-1){
+                read(f, cloneSha, sizeof(cloneSha)-1);
+                if(sha1(sourcePath,sourceSha)==0){
+                    if(strcmp(sourceSha, cloneSha)!=0) printf("Modified: %s\n", sourcePath);
+                }
+                close(f);
+            }
+            
+        }
+        else if(S_ISDIR(statBuf.st_mode)){
+            recursiveTree(sourcePath, destPath);
+        }
+    }
+    closedir(dir);
+
+
+}
+
+int main(int argc, char * argv[]){
+
+    if(argc!=3){
+        printf("Use ./sha1dir &lt;existing_dir/&gt; &lt;path_for_new_dir/&gt;");
+        return 1;
+    }
+
+    char targetDir[4096]={0};
+    if(realpath(argv[1], targetDir)==NULL) return 1;
+
+    recursiveTree(targetDir, argv[2]);
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="sha1dir-c">
+            <h2>File: sha1dir.c</h2>
+            <pre><code class="language-c">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+
+int sha1(char * filepath, char outputBuf[41]){
+
+    char command[1024]={0};
+    snprintf(command, sizeof(command), "sha1sum '%s'", filepath);
+
+    FILE *fp=popen(command, "r"); //pipeopen
+    if(fp==NULL){
+        //Errore in popen
+        return -1;
+    }
+
+    char buf[256];
+
+    if(fgets(buf, sizeof(buf), fp)!=NULL){
+        strncpy(outputBuf, buf, 40);
+        outputBuf[40]='\0';
+    }
+    else{
+        pclose(fp);
+        return -1;
+    }
+
+    pclose(fp);
+
+    return 0;
+
+}
+
+/*Scrivere un programma sha1dir con due argomenti:
+il primo è il pathname di una directory, il secondo un pathname inesistente dove poter creare una
+directory.
+Il programma deve ricostruire nella directory creata una struttura ad albero identica a quella che ha
+come radice il primo parametro. I nodi che nell'albero della prima directory sono file regolari
+corrispondono nel secondo albero a file che contengono la hash sha1 del file della primo albero.*/
+
+void recursiveTree(const char *sourceDir, const char *destDir){
+
+    mkdir(destDir, S_IRWXU);
+
+    DIR * dir=opendir(sourceDir);
+    struct dirent *dp;
+    struct stat statBuf;
+
+    while((dp=readdir(dir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char sourcePath[4096];
+        snprintf(sourcePath, sizeof(sourcePath), "%s/%s", sourceDir, dp-&gt;d_name);
+
+        char destPath[4096];
+        snprintf(destPath, sizeof(destPath), "%s/%s", destDir, dp-&gt;d_name);
+
+
+        stat(sourcePath,&amp;statBuf);
+        if(S_ISREG(statBuf.st_mode)){
+            char newContent[41];
+            if(sha1(sourcePath,newContent)==0){
+                int f=creat(destPath, S_IRWXU);
+                if(f!=-1){
+                    write(f,newContent,strlen(newContent));
+                    close(f);
+                }
+                
+            }
+        }
+        else if(S_ISDIR(statBuf.st_mode)){
+            recursiveTree(sourcePath, destPath);
+        }
+    }
+    closedir(dir);
+
+
+}
+
+int main(int argc, char * argv[]){
+
+    if(argc!=3){
+        printf("Use ./sha1dir &lt;existing_dir/&gt; &lt;path_for_new_dir/&gt;");
+        return 1;
+    }
+
+    char targetDir[4096]={0};
+    if(realpath(argv[1], targetDir)==NULL) return 1;
+
+    recursiveTree(targetDir, argv[2]);
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="sha1dir-c">
+            <h2>File: sha1dir.c</h2>
+            <pre><code class="language-c">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+
+int sha1(char * filepath, char outputBuf[41]){
+
+    char command[1024]={0};
+    snprintf(command, sizeof(command), "sha1sum '%s'", filepath);
+
+    FILE *fp=popen(command, "r"); //pipeopen
+    if(fp==NULL){
+        //Errore in popen
+        return -1;
+    }
+
+    char buf[256];
+
+    if(fgets(buf, sizeof(buf), fp)!=NULL){
+        strncpy(outputBuf, buf, 40);
+        outputBuf[40]='\0';
+    }
+    else{
+        pclose(fp);
+        return -1;
+    }
+
+    pclose(fp);
+
+    return 0;
+
+}
+
+/*Scrivere un programma sha1dir con due argomenti:
+il primo è il pathname di una directory, il secondo un pathname inesistente dove poter creare una
+directory.
+Il programma deve ricostruire nella directory creata una struttura ad albero identica a quella che ha
+come radice il primo parametro. I nodi che nell'albero della prima directory sono file regolari
+corrispondono nel secondo albero a file che contengono la hash sha1 del file della primo albero.*/
+
+void recursiveTree(const char *sourceDir, const char *destDir){
+
+    mkdir(destDir, S_IRWXU);
+
+    DIR * dir=opendir(sourceDir);
+    struct dirent *dp;
+    struct stat statBuf;
+
+    while((dp=readdir(dir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char sourcePath[4096];
+        snprintf(sourcePath, sizeof(sourcePath), "%s/%s", sourceDir, dp-&gt;d_name);
+
+        char destPath[4096];
+        snprintf(destPath, sizeof(destPath), "%s/%s", destDir, dp-&gt;d_name);
+
+
+        stat(sourcePath,&amp;statBuf);
+        if(S_ISREG(statBuf.st_mode)){
+            char newContent[41];
+            if(sha1(sourcePath,newContent)==0){
+                int f=creat(destPath, S_IRWXU);
+                if(f!=-1){
+                    write(f,newContent,strlen(newContent));
+                    close(f);
+                }
+                
+            }
+        }
+        else if(S_ISDIR(statBuf.st_mode)){
+            recursiveTree(sourcePath, destPath);
+        }
+    }
+    closedir(dir);
+
+
+}
+
+int main(int argc, char * argv[]){
+
+    if(argc!=3){
+        printf("Use ./sha1dir &lt;existing_dir/&gt; &lt;path_for_new_dir/&gt;");
+        return 1;
+    }
+
+    char targetDir[4096]={0};
+    if(realpath(argv[1], targetDir)==NULL) return 1;
+
+    recursiveTree(targetDir, argv[2]);
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

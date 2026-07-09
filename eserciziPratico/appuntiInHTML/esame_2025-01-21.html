@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2025-01-21</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2025-01-21</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#dirDFS-py">dirDFS.py</a></li>
+                <li><a href="#findsyslink-c">findsyslink.c</a></li>
+                <li><a href="#samecont-c">samecont.c</a></li>
+                <li><a href="#test-py">test.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="dirDFS-py">
+            <h2>File: dirDFS.py</h2>
+            <pre><code class="language-python">
+import os
+import sys
+
+"""Lo script o il programma Python deve fornire una lista dei file
+all'interno di un sottoalbero del file system ordinati secondo la “profondità” a partire da quelli più
+profondi, per ultimi quelli della directory radice. I nodi allo stesso livello devono essere ordinati in
+ordine crescente del nome del file."""
+
+def main():
+    if(len(sys.argv)!=2):
+        print("Use: python dirDFS.py &lt;dir/&gt;")
+        exit(1)
+    
+    levels={}
+
+    for root, dirs, files in os.walk(sys.argv[1]):
+        normalizedRoot=os.path.normpath(root)
+        depth=normalizedRoot.count(os.sep)
+
+        if(depth not in levels):
+            levels[depth]=[]
+
+        for f in files:
+            levels[depth].append((f,os.path.join(root,f)))
+        
+    depths=sorted(levels.keys(), reverse=True)
+
+    for d in depths:
+        temp=levels[d]
+        temp.sort(key=lambda x: x[0])
+        for t in temp:
+            print(t[1])
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="findsyslink-c">
+            <h2>File: findsyslink.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;sys/stat.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+
+/*Scrivere un programma che presi come parametri i pathname di
+un file f e di una directory d stampi l'elenco dei link simbolici che puntano a f presenti nel sottoalbero
+del file system generato dalla directory d.*/
+
+void recursiveSearch(char * _target, char * _dir){
+
+    char target[1024]={0};
+    realpath(_target, target);
+    struct stat targetStat;
+    stat(target,&amp;targetStat);
+    
+
+    DIR * currDir=opendir(_dir);
+    if(currDir==NULL) {
+        printf("lelele\n");
+        return;
+    }
+    struct dirent * dp;
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name,".")==0 || strcmp(dp-&gt;d_name,"..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s",_dir,dp-&gt;d_name); 
+
+        struct stat dpStat;
+        stat(dpPath, &amp;dpStat);
+        struct stat dpLStat;
+        lstat(dpPath,&amp;dpLStat);
+
+        if(S_ISLNK(dpLStat.st_mode) &amp;&amp; dpStat.st_ino==targetStat.st_ino) printf("%s\n",dpPath);
+
+        if(S_ISDIR(dpStat.st_mode)) recursiveSearch(_target, dpPath);
+
+    }
+    closedir(currDir);
+
+}
+
+int main(int argc, char *argv[]){
+
+    if(argc!=3){
+        printf("Use: ./findsyslink &lt;file&gt; &lt;dir/&gt;");
+        return 1;
+    }
+
+    recursiveSearch(argv[1], argv[2]);
+
+    return 0;
+}
+
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="samecont-c">
+            <h2>File: samecont.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;sys/stat.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+
+/*Esercizio 1: Linguaggio C (obbligatorio) 20 punti Scrivere il programma samecont che presi come
+parametri i pathname di un file f e di una directory d stampi l'elenco dei file che hanno la stessa
+ampiezza (numero di byte) di f ma non sono link fisici di f presenti nel sottoalbero del file system
+generato dalla directory d*/
+
+void recursiveSearch(char * _target, char * _dir){
+
+    char target[1024]={0};
+    realpath(_target, target);
+    struct stat targetStat;
+    stat(target,&amp;targetStat);
+    
+
+    DIR * currDir=opendir(_dir);
+    if(currDir==NULL) {
+        printf("lelele\n");
+        return;
+    }
+    struct dirent * dp;
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name,".")==0 || strcmp(dp-&gt;d_name,"..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s",_dir,dp-&gt;d_name);
+
+        struct stat dpStat;
+        stat(dpPath, &amp;dpStat);
+
+        if(dpStat.st_size == targetStat.st_size &amp;&amp; dpStat.st_ino!=targetStat.st_ino) printf("%s\n",dpPath);
+
+        if(S_ISDIR(dpStat.st_mode)) recursiveSearch(_target, dpPath);
+
+    }
+    closedir(currDir);
+
+}
+
+int main(int argc, char *argv[]){
+
+    if(argc!=3){
+        printf("Use: ./samecont &lt;file&gt; &lt;dir/&gt;");
+        return 1;
+    }
+
+    recursiveSearch(argv[1], argv[2]);
+
+    return 0;
+}
+
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_samecont_env"
+    abs_base_dir = os.path.abspath(base_dir)
+
+    target_file = os.path.join(abs_base_dir, "file_target.txt")
+    search_dir = os.path.join(abs_base_dir, "dir_d")
+    sub_dir = os.path.join(search_dir, "subdir")
+
+    # Pulizia preventiva
+    if os.path.exists(abs_base_dir):
+        shutil.rmtree(abs_base_dir)
+
+    os.makedirs(sub_dir)
+
+    # 1. Creazione file target (dimensione: 100 byte)
+    with open(target_file, "wb") as f:
+        f.write(b"A" * 100)
+
+    # 2. CASO VALIDO 1: Stessa dimensione (100 byte), inode diverso
+    file_valid_1 = os.path.join(search_dir, "file_valid_1.txt")
+    with open(file_valid_1, "wb") as f:
+        f.write(b"B" * 100)
+
+    # 3. CASO INVALIDO 1: Dimensione diversa (50 byte)
+    file_invalid_size = os.path.join(search_dir, "file_invalid_size.txt")
+    with open(file_invalid_size, "wb") as f:
+        f.write(b"C" * 50)
+
+    # 4. CASO INVALIDO 2: Hardlink al target (stessa dimensione, ma stesso inode)
+    hardlink_1 = os.path.join(search_dir, "hardlink_1")
+    os.link(target_file, hardlink_1)
+
+    # 5. CASO VALIDO 2 (nella sottocartella): Stessa dimensione, inode diverso
+    file_valid_2 = os.path.join(sub_dir, "file_valid_2.txt")
+    with open(file_valid_2, "wb") as f:
+        f.write(b"D" * 100)
+
+    # 6. CASO INVALIDO 3 (nella sottocartella): Hardlink al target
+    hardlink_2 = os.path.join(sub_dir, "hardlink_2")
+    os.link(target_file, hardlink_2)
+
+    print("Ambiente di test generato con successo: " + abs_base_dir)
+    print("Target f: " + target_file)
+    print("Directory d: " + search_dir)
+    print("Comando da lanciare per il test:")
+    print("./samecont " + target_file + " " + search_dir)
+    print("Output atteso (solo questi due file):")
+    print(file_valid_1)
+    print(file_valid_2)
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_findsyslink_env"
+    abs_base_dir = os.path.abspath(base_dir)
+
+    target_file = os.path.join(abs_base_dir, "file_target.txt")
+    file_esca = os.path.join(abs_base_dir, "file_esca.txt")
+    search_dir = os.path.join(abs_base_dir, "dir_d")
+    sub_dir = os.path.join(search_dir, "sottocartella")
+
+    # 1. Pulizia preventiva dell'ambiente
+    if os.path.exists(abs_base_dir):
+        shutil.rmtree(abs_base_dir)
+
+    os.makedirs(sub_dir)
+
+    # 2. Creazione del file target e di un file esca
+    with open(target_file, "w") as f:
+        f.write("Questo e' il file f.\n")
+    
+    with open(file_esca, "w") as f:
+        f.write("Questo e' un altro file.\n")
+
+    # 3. LIVELLO 1: Cartella principale
+    # CASO VALIDO 1: Symlink corretto
+    symlink_1 = os.path.join(search_dir, "symlink_valido_1")
+    os.symlink(target_file, symlink_1)
+
+    # CASO INVALIDO 1: Symlink che punta a un file diverso
+    symlink_falso = os.path.join(search_dir, "symlink_falso")
+    os.symlink(file_esca, symlink_falso)
+
+    # CASO INVALIDO 2: Hardlink (stesso inode del target, ma NON e' un symlink)
+    hardlink = os.path.join(search_dir, "hardlink_esca")
+    os.link(target_file, hardlink)
+
+    # 4. LIVELLO 2: Sottocartella
+    # CASO VALIDO 2: Symlink corretto nella sottocartella
+    symlink_2 = os.path.join(sub_dir, "symlink_valido_2")
+    os.symlink(target_file, symlink_2)
+
+    # CASO VALIDO 3: Un altro symlink corretto nella sottocartella
+    symlink_3 = os.path.join(sub_dir, "symlink_valido_3")
+    os.symlink(target_file, symlink_3)
+
+    print("Ambiente di test generato con successo: " + abs_base_dir)
+    print("Target f: " + target_file)
+    print("Directory d: " + search_dir)
+    print("\nComando da lanciare:")
+    print("./findsyslink " + target_file + " " + search_dir)
+    print("\n--- RISULTATO ATTESO ---")
+    print("I percorsi stampati devono essere ESATTAMENTE 3:")
+    print("- " + symlink_1)
+    print("- " + symlink_2)
+    print("- " + symlink_3)
+    print("\nSe hai implementato correttamente il ritorno 'int', il main dovrebbe stampare che il TOTALE e' 3.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_depth_env"
+    abs_base_dir = os.path.abspath(base_dir)
+
+    # Pulizia preventiva
+    if os.path.exists(abs_base_dir):
+        shutil.rmtree(abs_base_dir)
+
+    # Definizione delle directory
+    dir_lvl_1_a = os.path.join(abs_base_dir, "dir_1_a")
+    dir_lvl_1_b = os.path.join(abs_base_dir, "dir_1_b")
+    dir_lvl_2 = os.path.join(dir_lvl_1_a, "dir_2_profonda")
+
+    os.makedirs(dir_lvl_1_a)
+    os.makedirs(dir_lvl_1_b)
+    os.makedirs(dir_lvl_2)
+
+    # LIVELLO 0 (Radice del sottoalbero)
+    # L'ordinamento alfabetico atteso e': a_file_0, z_file_0
+    open(os.path.join(abs_base_dir, "z_file_0.txt"), "w").close()
+    open(os.path.join(abs_base_dir, "a_file_0.txt"), "w").close()
+
+    # LIVELLO 1 (Sottocartelle dirette)
+    # L'ordinamento alfabetico atteso e': b_file_1, x_file_1, y_file_1
+    open(os.path.join(dir_lvl_1_a, "x_file_1.txt"), "w").close()
+    open(os.path.join(dir_lvl_1_a, "b_file_1.txt"), "w").close()
+    open(os.path.join(dir_lvl_1_b, "y_file_1.txt"), "w").close()
+
+    # LIVELLO 2 (Cartella piu' profonda)
+    # L'ordinamento alfabetico atteso e': c_file_2, w_file_2
+    open(os.path.join(dir_lvl_2, "w_file_2.txt"), "w").close()
+    open(os.path.join(dir_lvl_2, "c_file_2.txt"), "w").close()
+
+    print("Ambiente di test generato con successo: " + abs_base_dir)
+    print("\nL'output del tuo programma deve essere rigorosamente in questo ordine:")
+    print("\n--- PROFONDITA' 2 (Piu' profonda) ---")
+    print(os.path.join(dir_lvl_2, "c_file_2.txt"))
+    print(os.path.join(dir_lvl_2, "w_file_2.txt"))
+    print("\n--- PROFONDITA' 1 ---")
+    # Nota: Anche se sono in cartelle diverse (dir_1_a e dir_1_b), 
+    # se la stampa richiede l'ordine alfabetico sul nome del file puro, 
+    # oppure sul path intero a parita' di livello, questo dipendera' 
+    # dalla tua implementazione di sort(). Assumiamo ordinamento sul path completo:
+    print(os.path.join(dir_lvl_1_a, "b_file_1.txt"))
+    print(os.path.join(dir_lvl_1_a, "x_file_1.txt"))
+    print(os.path.join(dir_lvl_1_b, "y_file_1.txt"))
+    print("\n--- PROFONDITA' 0 (Radice) ---")
+    print(os.path.join(abs_base_dir, "a_file_0.txt"))
+    print(os.path.join(abs_base_dir, "z_file_0.txt"))
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

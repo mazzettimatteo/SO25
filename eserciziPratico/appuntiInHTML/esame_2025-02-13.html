@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2025-02-13</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2025-02-13</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#ckfile-c">ckfile.c</a></li>
+                <li><a href="#ckfile-c">ckfile.c</a></li>
+                <li><a href="#maketest-py">maketest.py</a></li>
+                <li><a href="#maketest-py">maketest.py</a></li>
+                <li><a href="#samesize-py">samesize.py</a></li>
+                <li><a href="#tester-py">tester.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="ckfile-c">
+            <h2>File: ckfile.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;limits.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+
+
+
+/*Scrivere un programma ckfile che dati il pathname di un file f e di una directory d stampi, a seconda
+di una opzione:
+• l'elenco dei link simbolici che puntano a f presenti nel sottoalbero del file system generato
+dalla directory d, (opzione -s),
+ckfile -s /tmp/file /tmp
+• l'elenco dei link fisici di f presenti nel sottoalbero del file system generato dalla directory d
+(opzione -l),
+ckfile -l /tmp/file /tmp   */
+
+void recursiveSearch(char *_dir, char *_target, int calledWithS){
+    char target[1024]={0};
+    realpath(_target, target);
+
+    struct stat targetStat;
+    stat(target,&amp;targetStat);
+        
+    DIR * currDir=opendir(_dir);
+    struct dirent *dp;
+    if(currDir==NULL) {printf("lelele\n");
+        return;}
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char query[1024]={0};
+        snprintf(query,sizeof(query),"%s/%s",_dir,dp-&gt;d_name);
+
+        struct stat queryLStat;
+        lstat(query,&amp;queryLStat);
+
+        struct stat queryStat;
+        stat(query,&amp;queryStat);
+
+
+        if(calledWithS==1 &amp;&amp; S_ISLNK(queryLStat.st_mode)!=0 &amp;&amp; queryStat.st_ino==targetStat.st_ino){
+            printf("%s\n",query);
+        }
+        else if(calledWithS==0 &amp;&amp; S_ISLNK(queryLStat.st_mode)==0 &amp;&amp; queryLStat.st_ino==targetStat.st_ino){
+            printf("%s\n",query);
+        }
+
+        if(S_ISDIR(queryStat.st_mode)) recursiveSearch(query,_target,calledWithS);
+    }
+    closedir(currDir);
+}
+
+
+int main(int argc, char * argv[]){
+
+    if(argc!=4){
+        printf("Use \nckfile -s /tmp/file /tmp \nckfile -l /tmp/file /tmp\n");
+        return 1;
+    }
+
+    int calledWithS;
+    if(strcmp(argv[1],"-s")==0) calledWithS=1;
+    else  calledWithS=0;
+
+    recursiveSearch(argv[2], argv[3], calledWithS);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="ckfile-c">
+            <h2>File: ckfile.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;limits.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include&lt;fcntl.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;unistd.h&gt;
+
+
+/*Scrivere un programma ckfile che dati il pathname di un file f e di una directory d stampi, a seconda
+di una opzione:
+• l'elenco dei link simbolici che puntano a f presenti nel sottoalbero del file system generato
+dalla directory d, (opzione -s),
+ckfile -s /tmp/file /tmp
+• l'elenco dei link fisici di f presenti nel sottoalbero del file system generato dalla directory d
+(opzione -l),
+ckfile -l /tmp/file /tmp   */
+
+/*estendere il programma dell'esercizio 1 con ulteriori opzioni per stampare:
+• l'elenco dei file che hanno lo stesso contenuto di f presenti nel sottoalbero del file system
+generato dalla directory d (privo di opzione)
+ckfile /tmp/file /tmp
+• l'elenco dei file presenti nel sottoalbero del file system generato dalla directory d che hanno
+come contenuto la parte iniziale del file f (opzione -p seguita dalla lunghezza del prefisso
+comune).
+ckfile -p 100 /tmp/file /tmp
+stampa l'elenco dei file che coincidono nei primi 100 byte con f,*/
+
+void recursiveSearch(char *_dir, char *_target, char calledWith){
+    char target[1024]={0};
+    realpath(_target, target);
+
+    struct stat targetStat;
+    stat(target,&amp;targetStat);
+        
+    DIR * currDir=opendir(_dir);
+    struct dirent *dp;
+    if(currDir==NULL) {printf("lelele\n");
+        return;}
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char query[1024]={0};
+        snprintf(query,sizeof(query),"%s/%s",_dir,dp-&gt;d_name);
+
+        struct stat queryLStat;
+        lstat(query,&amp;queryLStat);
+
+        struct stat queryStat;
+        stat(query,&amp;queryStat);
+
+
+        if(calledWith=='s' &amp;&amp; S_ISLNK(queryLStat.st_mode)!=0 &amp;&amp; queryStat.st_ino==targetStat.st_ino){
+            printf("%s\n",query);
+        }
+        else if(calledWith=='l' &amp;&amp; S_ISLNK(queryLStat.st_mode)==0 &amp;&amp; queryLStat.st_ino==targetStat.st_ino){
+            printf("%s\n",query);
+        }
+
+        if(S_ISDIR(queryStat.st_mode)) recursiveSearch(query,_target,calledWith);
+    }
+    closedir(currDir);
+}
+
+void recursiveSearchP(char *_dir, char *_target, int sizeToSearch){
+    char target[1024]={0};
+    realpath(_target, target);
+
+    struct stat targetStat;
+    stat(target,&amp;targetStat);
+
+    char targetContent[sizeToSearch];
+
+    int targetFd=open(target, O_RDONLY);
+    if(targetFd==-1) return;    
+    size_t targetRead=read(targetFd, targetContent, sizeof(targetContent));
+    close(targetFd);
+    if(targetRead!=sizeToSearch) return;
+
+    DIR * currDir=opendir(_dir);
+    struct dirent *dp;
+    if(currDir==NULL) {printf("lelele\n");
+        return;}
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+        
+
+        char query[1024]={0};
+        snprintf(query,sizeof(query),"%s/%s",_dir,dp-&gt;d_name);
+
+        struct stat queryStat;
+        stat(query,&amp;queryStat);
+
+        char queryContent[sizeToSearch];
+
+        int fd=open(query, O_RDONLY);
+        if(fd==-1) continue;     
+                
+        size_t queryRead=read(fd, queryContent, sizeof(queryContent));
+        if(queryRead==sizeToSearch){
+            if(memcmp(queryContent, targetContent,sizeToSearch)==0) printf("%s\n",query);
+        }
+
+        if(S_ISDIR(queryStat.st_mode)) recursiveSearchP(query,_target,sizeToSearch);
+
+        close(fd);
+    }
+    closedir(currDir);
+}
+
+
+
+void recursiveSearchAll(char *_dir, char *_target){
+    char target[1024]={0};
+    realpath(_target, target);
+
+    struct stat targetStat;
+    stat(target,&amp;targetStat);
+
+    int targetFd=open(target, O_RDONLY);
+    if(targetFd==-1) return;    
+    char targetContent[targetStat.st_size];
+
+    size_t targetRead=read(targetFd, &amp;targetContent, sizeof(targetContent));
+    close(targetFd);
+    if(targetRead!=targetStat.st_size) return;
+    
+
+
+    DIR * currDir=opendir(_dir);
+    struct dirent *dp;
+    if(currDir==NULL) {printf("lelele\n");
+        return;}
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char query[1024]={0};
+        snprintf(query,sizeof(query),"%s/%s",_dir,dp-&gt;d_name);
+
+        struct stat queryStat;
+        stat(query,&amp;queryStat);
+
+        char queryContent[queryStat.st_size];
+
+        int fd=open(query, O_RDONLY);
+        if(fd==-1) continue;     
+                
+        size_t queryRead=read(fd, queryContent, sizeof(queryContent));
+        if(queryRead==queryStat.st_size){
+            if(memcmp(queryContent, targetContent, targetStat.st_size)==0) printf("%s\n",query);
+        }
+
+        if(S_ISDIR(queryStat.st_mode)) recursiveSearchAll(query,_target);
+        
+        close(fd);
+    }
+    closedir(currDir);
+}
+
+
+int main(int argc, char * argv[]){
+
+    if(argc!=4 &amp;&amp; argc!=3 &amp;&amp; argc!=5){
+        printf("Use \nckfile -s /dir file \nckfile -l /dir file\n");
+        printf("Use \nckfile -p &lt;num_of_bytes&gt; /dir file \nckfile /dir file\n");
+        return 1;
+    }
+
+    // MODIFICA: L'ordine dei parametri passati alle funzioni era invertito. 
+    // La firma delle tue funzioni richiede (char *_dir, char *_target).
+
+    if(argc &gt; 1 &amp;&amp; strcmp(argv[1],"-s")==0) 
+        recursiveSearch(argv[3], argv[2], 's'); // argv[3] è la dir, argv[2] è il file target
+
+    else if(argc &gt; 1 &amp;&amp; strcmp(argv[1],"-l")==0)  
+        recursiveSearch(argv[3], argv[2], 'l'); // MODIFICA: corretto errore di battitura reqcursiveSearch -&gt; recursiveSearch
+
+    else if(argc &gt; 1 &amp;&amp; strcmp(argv[1],"-p")==0) 
+        recursiveSearchP(argv[4], argv[3], atoi(argv[2])); // argv[4] è la dir, argv[3] è il file target
+
+    else if(argc==3) 
+        recursiveSearchAll(argv[2], argv[1]); // argv[2] è la dir, argv[1] è il file target
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="maketest-py">
+            <h2>File: maketest.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_ckfile_env"
+    
+    # Percorsi assoluti per evitare ambiguità
+    abs_base_dir = os.path.abspath(base_dir)
+    target_file = os.path.join(abs_base_dir, "file_target.txt")
+    target_dir = os.path.join(abs_base_dir, "dir_d")
+    sub_dir = os.path.join(target_dir, "sottocartella")
+    
+    # Pulizia preventiva
+    if os.path.exists(abs_base_dir):
+        shutil.rmtree(abs_base_dir)
+    os.makedirs(sub_dir)
+    
+    # 1. Creazione del file TARGET f
+    with open(target_file, "w") as f:
+        f.write("Questo è il file target (f) da cercare.\n")
+        
+    # 2. Creazione di un file ESCA
+    file_esca = os.path.join(target_dir, "file_esca_qualsiasi.txt")
+    with open(file_esca, "w") as f:
+        f.write("Sono un file diverso con un altro inode.\n")
+
+    # --- LIVELLO 1: Cartella principale (dir_d) ---
+    
+    # SYMLINK VALIDO
+    symlink_valido_1 = os.path.join(target_dir, "symlink_valido_1")
+    os.symlink(target_file, symlink_valido_1)
+    
+    # HARDLINK VALIDO
+    hardlink_valido_1 = os.path.join(target_dir, "hardlink_valido_1")
+    os.link(target_file, hardlink_valido_1)
+    
+    # SYMLINK ESCA (punta al file esca)
+    symlink_esca = os.path.join(target_dir, "symlink_esca")
+    os.symlink(file_esca, symlink_esca)
+
+    # --- LIVELLO 2: Sottocartella (dir_d/sottocartella) ---
+    
+    # SYMLINK VALIDO SOTTORETE
+    symlink_valido_2 = os.path.join(sub_dir, "symlink_valido_2")
+    os.symlink(target_file, symlink_valido_2)
+    
+    # HARDLINK VALIDO SOTTORETE
+    hardlink_valido_2 = os.path.join(sub_dir, "hardlink_valido_2")
+    os.link(target_file, hardlink_valido_2)
+    
+    # HARDLINK ESCA SOTTORETE (stesso inode del file esca, non del target)
+    hardlink_esca_sub = os.path.join(sub_dir, "hardlink_esca_sub")
+    os.link(file_esca, hardlink_esca_sub)
+
+    # Output dei percorsi per facilitare i test manuali
+    print("Ambiente di test generato con successo!\n")
+    print("Target f: " + target_file)
+    print("Target d: " + target_dir)
+    print("\n--- RISULTATI ATTESI ---")
+    print("Se chiami il programma con l'opzione -s (Symlink), deve stampare:")
+    print(" - " + symlink_valido_1)
+    print(" - " + symlink_valido_2)
+    print("\nSe chiami il programma con l'opzione -l (Hardlink), deve stampare:")
+    print(" - " + hardlink_valido_1)
+    print(" - " + hardlink_valido_2)
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="maketest-py">
+            <h2>File: maketest.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_size_env"
+    target_file = "file_target_f.txt"
+    target_dir = os.path.join(base_dir, "directory_d")
+    
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(base_dir):
+        shutil.rmtree(base_dir)
+    os.makedirs(target_dir)
+    
+    # Generiamo un file target di esattamente 50 byte
+    content_50_bytes = "A" * 50
+    with open(target_file, "w") as f:
+        f.write(content_50_bytes)
+        
+    # 1. CASO VALIDO: Stessa dimensione (50 byte), ma file diverso
+    file_valido_1 = os.path.join(target_dir, "file_valido_1.txt")
+    with open(file_valido_1, "w") as f:
+        f.write("B" * 50)
+        
+    # 2. CASO INVALIDO: Hardlink del file target (stessa dimensione ma stesso inode)
+    hardlink_1 = os.path.join(target_dir, "hardlink_esca.txt")
+    os.link(target_file, hardlink_1)
+    
+    # 3. CASO INVALIDO: File normale ma dimensione diversa (10 byte)
+    file_diverso = os.path.join(target_dir, "file_piccolo.txt")
+    with open(file_diverso, "w") as f:
+        f.write("C" * 10)
+        
+    # Creazione di una sottocartella per testare l'attraversamento del sottoalbero
+    sub_dir = os.path.join(target_dir, "sottocartella")
+    os.makedirs(sub_dir)
+    
+    # 4. CASO VALIDO SOTTORETE: Stessa dimensione (50 byte), file diverso
+    file_valido_2 = os.path.join(sub_dir, "file_valido_2.txt")
+    with open(file_valido_2, "w") as f:
+        f.write("D" * 50)
+        
+    # 5. CASO INVALIDO SOTTORETE: Hardlink del file target
+    hardlink_2 = os.path.join(sub_dir, "hardlink_esca_sub.txt")
+    os.link(target_file, hardlink_2)
+
+    print("Ambiente di test generato con successo!")
+    print("File target 'f': " + os.path.abspath(target_file))
+    print("Directory 'd': " + os.path.abspath(target_dir))
+    print("\nI file che il tuo script deve identificare e stampare sono:")
+    print("- " + file_valido_1)
+    print("- " + file_valido_2)
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="samesize-py">
+            <h2>File: samesize.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma Python o uno script bash che presi come parametri i pathname di un file f e
+di una directory d stampi l'elenco dei file che hanno la stessa ampiezza (numero di byte) di f ma non
+sono link fisici di f presenti nel sottoalbero del file system generato dalla directory d."""
+
+def main():
+    if(len(sys.argv)!=3):
+        print("Use: python samesize.py &lt;file&gt; &lt;dir/&gt;")
+        exit(1)
+    
+    result=[]
+
+    target=os.path.realpath(sys.argv[1])
+    targetStat=os.stat(target)
+
+    for root, dirs, files in os.walk(sys.argv[2]):
+        for f in files:
+            f=os.path.join(root, f)
+            fStat=os.stat(f)
+            if(fStat.st_ino == targetStat.st_ino):
+                continue
+            elif(fStat.st_size==targetStat.st_size):
+                result.append(f)
+
+    for r in result:
+        print(r)
+
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tester-py">
+            <h2>File: tester.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_esteso_env"
+    
+    # Percorsi base
+    abs_base_dir = os.path.abspath(base_dir)
+    target_file = os.path.join(abs_base_dir, "file_target.txt")
+    target_dir = os.path.join(abs_base_dir, "dir_d")
+    sub_dir = os.path.join(target_dir, "sottocartella")
+    
+    if os.path.exists(abs_base_dir):
+        shutil.rmtree(abs_base_dir)
+    os.makedirs(sub_dir)
+
+    # Contenuto di riferimento (es. 20 byte totali, consideriamo 10 byte come prefisso per i test -p)
+    prefisso = b"0123456789"
+    resto = b"ABCDEFGHIJ"
+    contenuto_target = prefisso + resto
+
+    # 1. Creazione FILE TARGET
+    with open(target_file, "wb") as f:
+        f.write(contenuto_target)
+
+    # 2. File con CONTENUTO IDENTICO (Stessa dimensione, stessi byte)
+    file_identico = os.path.join(target_dir, "file_identico.txt")
+    with open(file_identico, "wb") as f:
+        f.write(contenuto_target)
+
+    # 3. File con STESSO PREFISSO (Primi 10 byte uguali, resto diverso, dimensione diversa o uguale)
+    file_prefisso = os.path.join(sub_dir, "file_prefisso.txt")
+    with open(file_prefisso, "wb") as f:
+        f.write(prefisso + b"XXXXXXXXXX_EXTRA_BYTES")
+
+    # 4. File ESCA (Tutto diverso)
+    file_esca = os.path.join(target_dir, "file_esca.txt")
+    with open(file_esca, "wb") as f:
+        f.write(b"Z" * 30)
+
+    # 5. SYMLINK e HARDLINK (Per verificare di non aver rotto le funzioni precedenti)
+    os.symlink(target_file, os.path.join(target_dir, "symlink_valido"))
+    os.link(target_file, os.path.join(sub_dir, "hardlink_valido"))
+
+    print(f"Ambiente di test generato: {abs_base_dir}")
+    print(f"Target: {target_file}")
+    print(f"Directory: {target_dir}")
+    print("\n--- Test Consigliati ---")
+    print(f"./ckfile {target_file} {target_dir}          # Deve trovare 'file_identico.txt'")
+    print(f"./ckfile -p 10 {target_file} {target_dir}    # Deve trovare 'file_identico.txt' e 'file_prefisso.txt'")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

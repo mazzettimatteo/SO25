@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-02-16</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-02-16</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#ccpl-py">ccpl.py</a></li>
+                <li><a href="#pcp-c">pcp.c</a></li>
+                <li><a href="#pcp-c">pcp.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="ccpl-py">
+            <h2>File: ccpl.py</h2>
+            <pre><code class="language-python">
+import os
+import sys
+
+"""Sia data una directory che contiene file di testo.
+Scopo dell'esercizio e' di scrivere un programma Python o uno script bash chiamato ccpl che conti i
+caratteri delle corrispondenti righe di testo di tutti i file della directory, si vuole cioe' sapere il numero
+totale di caratteri presenti nelle prime righe di tutti i file, nelle seconde linee, ecc.
+$ ccpl mydir
+1 234
+2 21
+3 333
+…..
+l'ouput significa che se contiamo tutti i caratteri contenuti nella prima riga di tutti i file in mydir
+otteniamo 234 (mydir/file1 puo' avere 40 caratteri nella prima riga, mydir/file2 ne puo' avere 20, ecc...
+procedendo per tutti i file di mydir la somma fa 234)."""
+
+
+def main():
+    if(len(sys.argv)!=2):
+        print("Use: python ccpl.py &lt;dir/&gt;")
+        exit(1)
+
+    result={} # nDiRiga-&gt;numChars 
+
+    for root,dirs,files in os.walk(sys.argv[1]):
+        dirs.clear() #dice solo della directory
+        for f in files:
+            f=os.path.join(root,f)
+            with open(f,"r") as file:
+                i=1
+                for line in file:
+                    if(i not in result.keys()):
+                        result[i]=0
+                    result[i]+=len(line) 
+                    i+=1
+
+
+    for k in result.keys():
+        print(f"Linea {k}: {result[k]}")
+    #notare che tutti i risultati possono essere sfalsati di uno se c'è un carattere newline '\n'
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="pcp-c">
+            <h2>File: pcp.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/wait.h&gt;
+#include&lt;sys/stat.h&gt;
+
+/*Fare un programma di copia parallelo di file.
+pcp file1 file2
+pcp deve creare due processi figli; mentre un processo copia la prima meta’ del file, l'altro deve
+copiare l’altra meta’*/
+
+int main(int argc, char * argv[]){
+
+    if(argc!=3){
+        printf("Use: ./pcp &lt;src_file&gt; &lt;dest_file&gt;");
+        return 1;
+    }
+
+    int copyFd=creat(argv[2],0644);//secondo arg: permessi del file
+
+    struct stat srcStat;
+    stat(argv[1],&amp;srcStat);
+    
+    int len=srcStat.st_size;  
+    int halfSize=len/2;
+
+
+    int sonPid1=fork();
+    if(sonPid1==0){
+        int fd=open(argv[1],O_RDONLY);
+
+        char *content=malloc(halfSize);
+        if(fd!=-1){
+            read(fd,content,sizeof(content));
+        }
+
+
+        pwrite(copyFd,content,halfSize,0); //ultimo param è l'offset da cui partire per scivere nel file
+        exit(0);
+    }
+    int sonPid2=fork();
+    if(sonPid2==0){
+        int fd=open(argv[1],O_RDONLY);
+
+        char *content=malloc(len-halfSize);
+        if(fd!=-1){
+            pread(fd,content,sizeof(content),halfSize); //partial read: what to read, where to save it, where to start reading
+        }
+
+
+        pwrite(copyFd,content,len-halfSize,halfSize);
+        exit(0);
+    }
+    else{
+        waitpid(sonPid1,NULL,0);
+        waitpid(sonPid2,NULL,0);
+        printf("File copiato\n");
+        
+    }
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="pcp-c">
+            <h2>File: pcp.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/wait.h&gt;
+#include&lt;sys/stat.h&gt;
+#include &lt;getopt.h&gt;
+
+/*Fare un programma di copia parallelo di file.
+pcp file1 file2
+pcp deve creare due processi figli; mentre un processo copia la prima meta’ del file, l'altro deve
+copiare l’altra meta’*/
+/*usando “getopt” consentire di scegliere il grado di parallelismo voluto:
+pcp -j 8 file1 file2
+deve creare 8 processi, ogni processo copia 1/8 del file.*/
+
+int main(int argc, char * argv[]){
+
+    int nProcs=2; //default value
+    int opt;
+
+    while((opt=getopt(argc,argv, "j:"))!=-1){
+        switch(opt){
+            case 'j':
+                nProcs=atoi(optarg);
+                if(nProcs&lt;=0) return 1;
+                break;
+            default:
+                return 1;
+            }
+    }
+
+    if(optind+2!=argc){
+        printf("Use: ./pcp [-j num_procs] &lt;src_file&gt; &lt;dest_file&gt;");
+        return 1;
+    }
+
+    int copyFd=creat(argv[optind+1],0644);//secondo arg: permessi del file
+    //if(copyFd==-1) printf("llelele\n");
+
+    struct stat srcStat;
+    stat(argv[optind],&amp;srcStat);
+    
+    int len=srcStat.st_size;  
+    
+    int slice=len/nProcs;
+
+    int *sonPid=malloc(nProcs*sizeof(int));
+
+    for(int i=0;i&lt;nProcs;i++){
+        sonPid[i]=fork();
+        if(sonPid[i]==0){
+            int offset=i*slice;
+            int fd=open(argv[optind],O_RDONLY);
+
+            if(i==nProcs-1){ //L'ultimo proc deve copiare risultato della divisione+resto
+                slice+=(len%nProcs);
+            }
+
+
+            char *content=malloc(slice);
+            if(fd!=-1){
+                pread(fd,content,slice,offset); //Lettura parziale: leggo slice caratteri partendo da i*slice
+            }
+            pwrite(copyFd,content,slice,offset); //ultimo param è l'offset da cui partire per scivere nel file
+            exit(0);
+        }
+        else{
+            printf("Slice %d copiata\n",i);
+        }
+    }
+
+    for(int i=0;i&lt;nProcs;i++){
+        waitpid(sonPid[i],NULL,0);
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

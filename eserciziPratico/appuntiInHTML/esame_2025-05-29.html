@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2025-05-29</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2025-05-29</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#core_script-py">core_script.py</a></li>
+                <li><a href="#creaTest-py">creaTest.py</a></li>
+                <li><a href="#creaTest-py">creaTest.py</a></li>
+                <li><a href="#makeTest-py">makeTest.py</a></li>
+                <li><a href="#search_drec-c">search_drec.c</a></li>
+                <li><a href="#search_prec-c">search_prec.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="core_script-py">
+            <h2>File: core_script.py</h2>
+            <pre><code class="language-python">
+#!/usr/bin/env python3
+
+import sys
+import os
+
+
+"""Scrivere un programma Python o uno script bash che, dati il pathname di un file f e di una directory d
+stampi a seconda del proprio nome:
+• l'elenco dei link simbolici che puntano a f presenti nella directory d se chiamato come cksimlink
+cksymlink /tmp/file /tmp/dir
+• l'elenco dei link fisici di f presenti nella directory d se chiamato come cklink
+cklink /tmp/file /tmp/dir"""
+
+
+"""
+Per fare si che lo script risponda a due comandi seguire questo procedimento:
+    - creare core_script.py con prima riga:
+        #!/usr/bin/env python3
+    - rendere eseguibile tale script con:
+        chmod +x core_script.py
+    - creare due link simbolici con nomi diversi collegati allo script:
+        ln -s core_script.py cksymlink
+        ln -s core_script.py cklink
+    - nel programma python distinguere i casi in base al valore di argv[0]
+"""
+
+
+def main():
+    if(len(sys.argv)!=3):
+        print("Use: \n ./cksymlink &lt;file&gt; &lt;dir/&gt;    prints name of all softlink in dir that point to file \n /cklink &lt;file&gt; &lt;dir/&gt;    prints name of all hard link in dir that point to file\n")
+        exit(1)
+    target=os.path.abspath(sys.argv[1])
+    result=[]
+    if(sys.argv[0]=="./cksymlink"):
+        for root, dirs, files in os.walk(sys.argv[2]):
+            dirs.clear()
+            for f in files:
+                f=os.path.join(root, f)
+                if(os.path.islink(f) and os.path.samefile(f,target)):
+                    result.append(f)
+        print("symlink list:")
+
+    elif(sys.argv[0]=="./cklink"):
+        targetStat=os.stat(target)
+        for root, dirs, files in os.walk(sys.argv[2]):
+            dirs.clear()
+            for f in files:
+                f=os.path.join(root, f)
+                fStat=os.stat(f)
+                if(os.path.islink(f)):
+                    continue
+                if(targetStat.st_ino==fStat.st_ino):
+                    result.append(f)
+        print("hlink list:")
+
+
+    for r in result:
+        print(r)
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="creaTest-py">
+            <h2>File: creaTest.py</h2>
+            <pre><code class="language-python">
+import os
+
+def main():
+    base_dir = "test_prec_dir"
+    
+    # Otteniamo il percorso assoluto della cartella di test
+    abs_base_dir = os.path.abspath(base_dir)
+
+    # Creazione directory principale
+    if not os.path.exists(abs_base_dir):
+        os.makedirs(abs_base_dir)
+
+    # 1. File path ricorsivo VALIDO (nella cartella base)
+    file1 = os.path.join(abs_base_dir, "file_ricorsivo_1.txt")
+    with open(file1, "w") as f:
+        f.write(file1)
+
+    # 2. File ESCA normale
+    file2 = os.path.join(abs_base_dir, "file_esca.txt")
+    with open(file2, "w") as f:
+        f.write("Il contenuto di questo file non c'entra nulla con il suo nome.")
+
+    # Creazione di una sottocartella per verificare la scansione (ricorsiva o iterativa)
+    sub_dir = os.path.join(abs_base_dir, "sub_dir")
+    if not os.path.exists(sub_dir):
+        os.makedirs(sub_dir)
+
+    # 3. File path ricorsivo VALIDO (nella sottocartella)
+    file3 = os.path.join(sub_dir, "file_ricorsivo_2.txt")
+    with open(file3, "w") as f:
+        f.write(file3)
+
+    # 4. File ESCA insidioso (pathname corretto ma con un \n di troppo alla fine)
+    file4 = os.path.join(sub_dir, "file_esca_insidioso.txt")
+    with open(file4, "w") as f:
+        f.write(file4 + "\n")
+
+    # 5. File vuoto per testare crash da lettura
+    file5 = os.path.join(sub_dir, "file_vuoto.txt")
+    with open(file5, "w") as f:
+        pass
+
+    print("Ambiente di test generato con successo!")
+    print("Percorso assoluto della directory di test: " + abs_base_dir)
+    print("\nI file che il tuo programma in C deve identificare sono:")
+    print("- " + file1)
+    print("- " + file3)
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="creaTest-py">
+            <h2>File: creaTest.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_drec_dir"
+    abs_base_dir = os.path.abspath(base_dir)
+
+    # Pulizia preventiva per avere un ambiente sempre fresco a ogni avvio
+    if os.path.exists(abs_base_dir):
+        shutil.rmtree(abs_base_dir)
+    os.makedirs(abs_base_dir)
+
+    # 1. IL BERSAGLIO: Un file normalissimo, ma il cui path assoluto 
+    # verra' inserito all'interno di un altro file.
+    file_bersaglio = os.path.join(abs_base_dir, "file_bersaglio.txt")
+    with open(file_bersaglio, "w") as f:
+        f.write("Sono un file normale. Nessuno cerca il mio contenuto.")
+
+    # 2. FILE DIR RICORSIVO VALIDO: Contiene il path del file bersaglio
+    file_valido = os.path.join(abs_base_dir, "file_valido.txt")
+    with open(file_valido, "w") as f:
+        f.write("Ecco un path a caso trovato in questa directory:\n")
+        f.write(file_bersaglio + "\n")
+
+    # 3. FILE DIR RICORSIVO AUTOREFERENZIALE: Contiene il proprio path.
+    # Secondo la traccia, anche questo e' valido perche' e' comunque 
+    # "il pathname di un file della directory corrente".
+    file_auto = os.path.join(abs_base_dir, "file_autoreferenziale.txt")
+    with open(file_auto, "w") as f:
+        f.write(file_auto)
+
+    # 4. ESCA INSIDIOSA: Contiene un path assoluto ben formattato, 
+    # ma di un file che NON esiste fisicamente nella directory.
+    file_esca_path = os.path.join(abs_base_dir, "esca_path_finto.txt")
+    with open(file_esca_path, "w") as f:
+        f.write(os.path.join(abs_base_dir, "fantasma.txt"))
+
+    # 5. ESCA NORMALE: Testo generico.
+    file_esca_normale = os.path.join(abs_base_dir, "esca_normale.txt")
+    with open(file_esca_normale, "w") as f:
+        f.write("Niente da vedere qui, circolare.")
+
+    print("Ambiente di test generato con successo!")
+    print("Percorso assoluto della directory: " + abs_base_dir)
+    print("\nI file che il tuo programma in C deve stampare a video sono:")
+    print("- file_valido.txt")
+    print("- file_autoreferenziale.txt")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="makeTest-py">
+            <h2>File: makeTest.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "ambiente_test"
+    target_file = os.path.join(base_dir, "file_target.txt")
+    target_dir = os.path.join(base_dir, "directory_d")
+    
+    # 1. Pulizia preventiva (se la cartella esiste già, la ricreiamo pulita)
+    if os.path.exists(base_dir):
+        shutil.rmtree(base_dir)
+    
+    os.makedirs(target_dir)
+
+    # 2. Creazione del file target (f)
+    with open(target_file, "w") as f:
+        f.write("Questo è il file target originale.\nIl suo inode è unico.\n")
+        
+    # 3. Creazione di un file "esca" normale
+    file_esca = os.path.join(target_dir, "file_normale.txt")
+    with open(file_esca, "w") as f:
+        f.write("Sono un file normale, non un link.\n")
+
+    # 4. Creazione dell'HARD LINK reale (cklink deve trovarlo)
+    hardlink_reale = os.path.join(target_dir, "hardlink_valido")
+    os.link(target_file, hardlink_reale)
+    
+    # 5. Creazione di un HARD LINK "esca" (stesso contenuto, ma file diverso)
+    # Copiamo il file brutalmente per avere stesso testo ma inode diverso
+    hardlink_falso = os.path.join(target_dir, "hardlink_falso")
+    shutil.copy2(target_file, hardlink_falso)
+
+    # 6. Creazione del SYMLINK reale (cksymlink deve trovarlo)
+    symlink_reale = os.path.join(target_dir, "symlink_valido")
+    # Usiamo il path assoluto per evitare problemi di risoluzione
+    os.symlink(os.path.abspath(target_file), symlink_reale)
+
+    # 7. Creazione di un SYMLINK "esca" (punta al file normale, non al target)
+    symlink_falso = os.path.join(target_dir, "symlink_falso")
+    os.symlink(os.path.abspath(file_esca), symlink_falso)
+
+    print(f"Ambiente di test generato con successo nella cartella: {base_dir}/")
+    print(f"-&gt; File target 'f': {os.path.abspath(target_file)}")
+    print(f"-&gt; Directory 'd': {os.path.abspath(target_dir)}")
+    print("\nFile generati dentro 'd':")
+    for item in os.listdir(target_dir):
+        print(f"  - {item}")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="search_drec-c">
+            <h2>File: search_drec.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;limits.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+
+
+/*Chiamiamo file dir ricorsivo un file che contiene una sequenza
+di byte identica al pathname completo di un file della directory corrente. Il candidato scriva il
+programma search_drec (senza parametri) che deve scorrere la directory corrente e elencare tutti i file
+dir ricorsivi.*/
+//passo un param così il programma è più bello: la dir su cui fare la ricerca
+//Io ho capito che devo cercare solo nella dir corrente, non nelle sottodir, 
+//altrimenti si utilizzerebbe la stessa logica ma rendendola una funzione ricorsiva
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use ./search_drec &lt;dir/&gt;");
+        return 1;
+    }
+
+    
+
+    DIR * currDir=opendir(argv[1]);
+    struct dirent *dp;
+    DIR * currDir_internal=opendir(argv[1]);
+    struct dirent *dp_internal;
+    
+
+
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        int trovato=0;
+
+        char query[1024]={0};
+        snprintf(query,sizeof(query),"%s/%s", argv[1], dp-&gt;d_name);
+        
+        char fullPath[1024]={0};
+        realpath(query, fullPath);
+
+        int fd=open(fullPath, O_RDONLY);
+        if(fd==-1) continue;     
+        FILE * currFile=fdopen(fd, "r");
+        if(currFile==NULL){
+            close(fd);
+            continue;
+        }
+
+        char *lineBuf=NULL;
+        size_t bufDim=0;
+        ssize_t readBytes;
+
+        while((readBytes=getline(&amp;lineBuf,&amp;bufDim, currFile))!=-1){
+
+            rewinddir(currDir_internal); 
+            /*La funzione readdir fa avanzare il puntatore di lettura dello stream a ogni iterazione. 
+            Quando il ciclo while(dp_internal=...) termina, il puntatore si trova alla fine della dir (End Of File).
+            Al passaggio alla riga successiva (o al file successivo), il ciclo riparte ma readdir
+            restituisce immediatamente NULL perché il puntatore non è stato ripristinato all'inizio.*/
+            
+            while((dp_internal=readdir(currDir_internal)) &amp;&amp; trovato!=1){
+                if(strcmp(dp_internal-&gt;d_name, ".")==0 || strcmp(dp_internal-&gt;d_name, "..")==0) continue;
+
+                char temp[1024]={0};
+                snprintf(temp,sizeof(temp),"%s/%s", argv[1], dp_internal-&gt;d_name);
+                char content[1024]={0};
+                realpath(temp, content);
+
+                if(strstr(lineBuf,content)!=NULL){
+                    printf("%s\n", dp-&gt;d_name);
+                    trovato=1;
+                }
+            }
+            
+
+            
+        }
+        free(lineBuf);
+        fclose(currFile);
+
+    }
+    closedir(currDir);
+    closedir(currDir_internal);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="search_prec-c">
+            <h2>File: search_prec.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;limits.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+
+
+/*hiamiamo file path ricorsivo un file che contiene
+una sequenza di byte identica al proprio pathname completo. Ad esempio un file myfile nella
+directory /tmp/mydir è path ricorsivo se contiene la sequenza /tmp/mydir/myfile. Il candidato scriva il
+programma search_prec (senza parametri) che deve scorrere la directory corrente e elencare tutti i file
+path ricorsivi.*/
+//passo un param così il programma è più bello: la dir su cui fare la ricerca
+//Io ho capito che devo cercare solo nella dir corrente, non nelle sottodir, 
+//altrimenti si utilizzerebbe la stessa logica ma rendendola una funzione ricorsiva
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use ./search_prec &lt;dir/&gt;");
+        return 1;
+    }
+
+    
+
+    DIR * currDir=opendir(argv[1]);
+    struct dirent *dp;
+
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char query[1024]={0};
+        snprintf(query,sizeof(query),"%s/%s", argv[1], dp-&gt;d_name);
+        
+        char fullPath[1024]={0};
+        realpath(query, fullPath);
+
+        int fd=open(fullPath, O_RDONLY);
+        if(fd==-1) continue;     
+        FILE * currFile=fdopen(fd, "r");
+        if(currFile==NULL){
+            close(fd);
+            continue;
+        }
+
+        char *lineBuf=NULL;
+        size_t bufDim=0;
+        ssize_t readBytes;
+
+        while((readBytes=getline(&amp;lineBuf,&amp;bufDim, currFile))!=-1){
+            if(strstr(lineBuf,fullPath)!=NULL){
+                printf("%s\n", dp-&gt;d_name);
+            }
+        }
+        free(lineBuf);
+        fclose(currFile);
+
+    }
+    closedir(currDir);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

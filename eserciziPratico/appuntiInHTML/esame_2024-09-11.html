@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2024-09-11</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2024-09-11</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#slinout-py">slinout.py</a></li>
+                <li><a href="#slinout2-py">slinout2.py</a></li>
+                <li><a href="#tester-py">tester.py</a></li>
+                <li><a href="#timeout-c">timeout.c</a></li>
+                <li><a href="#timeout-c">timeout.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="slinout-py">
+            <h2>File: slinout.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma Python o uno script bash slinout che elenchi tutti i link simbolici presenti nel
+sottoalbero del file system che ha come radice la directory passata come parametro (o la current
+working directory se slinout viene chiamato senza parametri).
+I link simbolici devono essere suddivisi in interni, che cioè puntano ad altro file o directory nel
+sottoalbero considerato, o esterni, che cioè indicano un file o directory al di fuori del sotoalbero.
+(attenzione: il target dei link simbolici può essere assoluto o relativo)"""
+
+def main():
+    if(len(sys.argv)&gt;2):
+        print("Use: \npython slinout.py for the current dir, or\npython slinout.py &lt;dir/&gt; for the specified dir ")
+        exit(1)
+    
+    if(len(sys.argv)==1):
+        targetDir="."
+    else: 
+        targetDir=sys.argv[1]
+
+    targetDirFiles=[]
+
+    for root, dirs, files in os.walk(targetDir):
+
+        rootPath=os.path.abspath(root)
+        if(rootPath not in targetDirFiles): #serve perché esistono anche i link a dir e non solo ai file
+            targetDirFiles.append(rootPath)
+
+        for f in files:
+            fPath=os.path.join(root,f)
+            fPath=os.path.abspath(fPath)
+            
+            if not os.path.islink(fPath):
+               targetDirFiles.append(fPath)
+
+
+    internalLinks=[]
+    externalLinks=[]
+    for root, dirs, files in os.walk(targetDir):
+        for f in files:
+            fPath=os.path.join(root,f)
+            fPath=os.path.abspath(fPath)
+
+            if os.path.islink(fPath):
+                linkSrc=os.readlink(fPath) #ottengo l'indirizzo a cui punta il link
+                linkSrc=os.path.join(root, linkSrc) #lo rendo assoluto 
+                linkSrc=os.path.abspath(linkSrc)
+
+                if(linkSrc in targetDirFiles): #guardo se è dentro la targetDir
+                    internalLinks.append(fPath)
+                else:
+                    externalLinks.append(fPath)
+
+    print("Internal links:")
+    for l in internalLinks:
+        print(l)
+    print("----------")
+    print("External links:")
+    for l in externalLinks:
+        print(l)
+
+
+if __name__=="__main__":
+    main()
+
+"""Nota bene: non era necessario pre-esplorare l'albero di targetDir. Basta: 
+- salvarsi path assoluto di targetDir
+- usare os.readlink sui file che sono link ottenendo realPath
+- controllare se realPath contiene il path assoluto di targetDir  """
+
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="slinout2-py">
+            <h2>File: slinout2.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma Python o uno script bash slinout che elenchi tutti i link simbolici presenti nel
+sottoalbero del file system che ha come radice la directory passata come parametro (o la current
+working directory se slinout viene chiamato senza parametri).
+I link simbolici devono essere suddivisi in interni, che cioè puntano ad altro file o directory nel
+sottoalbero considerato, o esterni, che cioè indicano un file o directory al di fuori del sotoalbero.
+(attenzione: il target dei link simbolici può essere assoluto o relativo)"""
+
+def main():
+    if(len(sys.argv)&gt;2):
+        print("Use: \npython slinout.py for the current dir, or\npython slinout.py &lt;dir/&gt; for the specified dir ")
+        exit(1)
+    
+    if(len(sys.argv)==1):
+        targetDir=os.path.abspath(".")
+    else: 
+        targetDir=os.path.abspath(sys.argv[1])
+
+    internalLinks=[]
+    externalLinks=[]
+    
+    for root, dirs, files in os.walk(targetDir):
+        for f in files:
+            fPath=os.path.join(root,f)
+            fPath=os.path.abspath(fPath)
+            
+            
+            if os.path.islink(fPath):
+                realPath=os.readlink(fPath)
+                realPath=os.path.join(root, realPath)
+                realPath=os.path.abspath(realPath)
+                if(realPath.startswith(targetDir)):
+                    internalLinks.append(fPath)
+                else:
+                    externalLinks.append(fPath)
+
+
+
+    print("Internal links:")
+    for l in internalLinks:
+        print(l)
+    print("----------")
+    print("External links:")
+    for l in externalLinks:
+        print(l)
+
+
+if __name__=="__main__":
+    main()
+
+"""Nota bene: non era necessario pre-esplorare l'albero di targetDir. Basta: 
+- salvarsi path assoluto di targetDir
+- usare os.readlink sui file che sono link ottenendo realPath
+- controllare se realPath contiene il path assoluto di targetDir  """
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tester-py">
+            <h2>File: tester.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    # Definiamo i nomi delle cartelle
+    base_test_dir = "test_slinout_env"          # Il sottoalbero da passare al programma
+    outside_dir = "test_slinout_outside"        # La cartella ESTERNA al sottoalbero
+
+    abs_base_test_dir = os.path.abspath(base_test_dir)
+    abs_outside_dir = os.path.abspath(outside_dir)
+
+    # Pulizia preventiva
+    if os.path.exists(abs_base_test_dir): shutil.rmtree(abs_base_test_dir)
+    if os.path.exists(abs_outside_dir): shutil.rmtree(abs_outside_dir)
+
+    # Creazione delle directory
+    os.makedirs(abs_base_test_dir)
+    os.makedirs(os.path.join(abs_base_test_dir, "subdir"))
+    os.makedirs(abs_outside_dir)
+
+    # Creazione dei file target fisici
+    internal_file = os.path.join(abs_base_test_dir, "internal_target.txt")
+    with open(internal_file, "w") as f: f.write("Interno")
+
+    external_file = os.path.join(abs_outside_dir, "external_target.txt")
+    with open(external_file, "w") as f: f.write("Esterno")
+
+    # --- Creazione dei Link Simbolici nella radice del sottoalbero ---
+    
+    # 1. INTERNO (Assoluto)
+    os.symlink(internal_file, os.path.join(abs_base_test_dir, "sym_int_abs"))
+    
+    # 2. INTERNO (Relativo - punta al file nella stessa cartella)
+    os.symlink("internal_target.txt", os.path.join(abs_base_test_dir, "sym_int_rel"))
+    
+    # 3. ESTERNO (Assoluto)
+    os.symlink(external_file, os.path.join(abs_base_test_dir, "sym_ext_abs"))
+    
+    # 4. ESTERNO (Relativo - sale di un livello e scende nella cartella esterna)
+    os.symlink(f"../{outside_dir}/external_target.txt", os.path.join(abs_base_test_dir, "sym_ext_rel"))
+
+    # --- Creazione dei Link Simbolici nella sottocartella ---
+    subdir = os.path.join(abs_base_test_dir, "subdir")
+    
+    # 5. INTERNO (Relativo - sale di un livello per puntare al file interno)
+    os.symlink("../internal_target.txt", os.path.join(subdir, "sym_int_rel_sub"))
+    
+    # 6. ESTERNO (Relativo - sale di due livelli per puntare al file esterno)
+    os.symlink(f"../../{outside_dir}/external_target.txt", os.path.join(subdir, "sym_ext_rel_sub"))
+
+    print(f"Ambiente di test generato con successo!")
+    print(f"Directory radice da analizzare: {abs_base_test_dir}")
+    print("\n--- RISULTATO ATTESO DAL TUO PROGRAMMA ---")
+    print("LINK INTERNI (puntano dentro il sottoalbero):")
+    print(" - sym_int_abs")
+    print(" - sym_int_rel")
+    print(" - subdir/sym_int_rel_sub")
+    print("\nLINK ESTERNI (puntano fuori dal sottoalbero):")
+    print(" - sym_ext_abs")
+    print(" - sym_ext_rel")
+    print(" - subdir/sym_ext_rel_sub")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="timeout-c">
+            <h2>File: timeout.c</h2>
+            <pre><code class="language-c">
+#define _GNU_SOURCE
+
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include &lt;sys/timerfd.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/syscall.h&gt;
+#include &lt;poll.h&gt;
+#include &lt;signal.h&gt;
+
+/*Scrivere un programma timeout che esegua un programma e lo termini se supera una durata
+massima prefissata. timeout ha almeno due argomenti: il primo è la durata massima in millisecondi, i
+parametri dal secondo in poi sono il programma da lanciare coi rispettivi argomenti.
+Es:
+timeout 5000 sleep 2
+temina in due secondi (sleep termina in tempo).
+timeout 3000 sleep 5
+passati tre secondi il programma sleep viene terminato.
+Tmeout deve essere scritto usando le system call poll, pidfd_open, timerfd**/
+//Test with:    ./timeout 50000 ls -la           ./timeout 1 ls -la  
+
+int main(int argc, char * argv[]){
+
+    if(argc&lt;3){
+        printf("Use: ./timeout &lt;time_in_ms&gt; &lt;command&gt; [command_args]");
+        return 1;
+        }
+    int maxTime=atoi(argv[1]);
+
+    int sonFd, timerFd;
+
+    int sonPid=fork(); //Sdoppio l'esecuzione: padre-figlio
+    if(sonPid==0){ //Processo figlio
+        execvp(argv[2], &amp;argv[2]); //Esegui comando passato come argv[2] usando come argmoneti tutto ciò che vine dopo l'argv2
+    }
+    else{ //Parent process
+        
+        //sonFd=pidfd_open(sonPid,0);
+        sonFd = syscall(SYS_pidfd_open, sonPid, 0); //Gemini dice di usare questa per sicurezza: su certi kernel linux pidfd_open è troppo recente
+
+        timerFd=timerfd_create(CLOCK_MONOTONIC,0); 
+        /*I timer possono essere di più tipi, 
+        REALTIME, tempo di sistema in sec/nsec da 1 gen 1970 =&gt;Si usa quando deve attivarsi un evento come in un calendario 
+        MONOTONIC, non dipende dall'orologio di sistema, è quello che nella vita di tutti giorni in effetti chiamiamo timer
+        BOOTTIME, come monotonic, ma continua ad andare anche se il sistema è in standby
+        */
+
+        struct itimerspec uTimer;
+        uTimer.it_value.tv_sec=maxTime/1000; //Tempo impostato nel timer in secondi
+        uTimer.it_value.tv_nsec=(maxTime%1000)*1000000; //Tempo che resta dalla divisione per i secondi 
+
+        uTimer.it_interval.tv_nsec=0; //Ogni quanto ripetere il timer: 0=&gt;non ripeterlo
+        uTimer.it_interval.tv_sec=0;
+
+        timerfd_settime(timerFd,0,&amp;uTimer,NULL); //Avvia il timer
+
+        struct pollfd fds[2]; //Array per mantenere gli eventi dei filedersciptors
+        fds[0].fd=timerFd;
+        fds[0].events=POLLIN; //sono in lettura(IN) dall' fd di timer
+        /*Usi POLLIN se vuoi sapere quando ci sono dati da leggere,
+         POLLOUT se vuoi sapere quando il buffer è libero per scrivere*/
+
+        fds[1].fd=sonFd;
+        fds[1].events=POLLIN; //sono in lettura(IN) dall' fd del figlio
+        
+        poll(fds, 2, -1); //Attendi eventi sull' array di filedescriptors, di dim 2, resta bloccato(-1) nel mentre
+
+        if(fds[1].revents &amp; POLLIN){ //Tutto ok, il figlio ha terminato in tempo
+            printf("The son process has ended succesfully\n");
+        }
+        else if(fds[0].revents &amp; POLLIN){
+            kill(sonPid, SIGKILL); //Interrompiamo il figlio killando il suo pid
+            printf("The son process died because of timeout\n");
+        }
+         
+    }
+
+    
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="timeout-c">
+            <h2>File: timeout.c</h2>
+            <pre><code class="language-c">
+#define _GNU_SOURCE
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/timerfd.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/syscall.h&gt;
+#include &lt;poll.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;stdint.h&gt; // Necessario per uint64_t utilizzato dalla read del timer
+
+/*Scrivere un programma timeout che esegua un programma e lo termini se supera una durata
+massima prefissata. timeout ha almeno due argomenti: il primo è la durata massima in millisecondi, i
+parametri dal secondo in poi sono il programma da lanciare coi rispettivi argomenti.
+
+Estendere l'esercizio 1 per fare in modo che se prima del timeout il programma termina con un errore,
+al termine del timeout il programma venga riattivato.*/
+
+int main(int argc, char * argv[]){
+
+    if(argc &lt; 3){
+        printf("Use: ./timeout &lt;time_in_ms&gt; &lt;command&gt; [command_args]\n");
+        return 1;
+    }
+    
+    int maxTime = atoi(argv[1]);
+
+    // Configurazione del timer
+    int timerFd = timerfd_create(CLOCK_MONOTONIC, 0); 
+    struct itimerspec uTimer;
+    uTimer.it_value.tv_sec = maxTime / 1000;
+    uTimer.it_value.tv_nsec = (maxTime % 1000) * 1000000; 
+    uTimer.it_interval.tv_sec = 0; 
+    uTimer.it_interval.tv_nsec = 0;
+
+    int sonPid = fork(); 
+    if(sonPid == 0){ // Processo figlio
+        execvp(argv[2], &amp;argv[2]);
+        // Se execvp fallisce (es. il comando non esiste), forziamo l'uscita con errore
+        exit(1); 
+    }
+    
+    // Processo padre
+    int sonFd = syscall(SYS_pidfd_open, sonPid, 0);
+
+    // Avvio del timer
+    timerfd_settime(timerFd, 0, &amp;uTimer, NULL); 
+
+    // Configurazione della struct per la poll
+    struct pollfd fds[2]; 
+    fds[0].fd = timerFd;
+    fds[0].events = POLLIN; 
+    fds[1].fd = sonFd;
+    fds[1].events = POLLIN; 
+    
+    int restartPending = 0; // Flag di stato per il supervisore
+
+    // Loop principale di monitoraggio
+    while(1){
+        poll(fds, 2, -1); 
+
+        // 1. EVENTO TIMER: Il tempo a disposizione è scaduto
+        if(fds[0].revents &amp; POLLIN){
+            
+            // Consuma i byte generati dal timer per resettare l'evento ed evitare loop infiniti
+            uint64_t expirations;
+            read(timerFd, &amp;expirations, sizeof(uint64_t));
+
+            if(restartPending == 0){
+                // Nessun errore pregresso: il figlio ha esaurito il tempo e va interrotto
+                kill(sonPid, SIGKILL); 
+                printf("The son process died because of timeout\n");
+                break; // Uscita dal programma supervisore
+            }
+            else {
+                // Il figlio è andato in errore precedentemente. Scaduto il timeout, lo riavviamo.
+                printf("The son process gave an error, so it's being re-run after the timeout\n");
+                
+                // Nuova esecuzione
+                sonPid = fork();
+                if(sonPid == 0){
+                    execvp(argv[2], &amp;argv[2]);
+                    exit(1);
+                }
+                
+                // Aggiornamento dei file descriptor del padre per monitorare il nuovo figlio
+                close(sonFd); 
+                sonFd = syscall(SYS_pidfd_open, sonPid, 0);
+                
+                fds[1].fd = sonFd; // Riattiva l'ascolto per il nuovo processo
+                restartPending = 0; // Reset del flag
+                
+                // Riavvolgimento e riattivazione del timer per il nuovo processo
+                timerfd_settime(timerFd, 0, &amp;uTimer, NULL);
+            }
+        }
+        
+        // 2. EVENTO FIGLIO: Il processo ha terminato l'esecuzione
+        if(fds[1].revents &amp; POLLIN){ 
+            int status;
+            waitpid(sonPid, &amp;status, 0); // Lettura dello stato di uscita del figlio
+            
+            if(WIFEXITED(status) &amp;&amp; WEXITSTATUS(status) == 0){
+                // Terminazione corretta prima della scadenza del timer
+                printf("The son process has ended successfully\n");
+                break; // Uscita dal programma supervisore
+            }
+            else {
+                // Terminazione anomala o codice di errore restituito
+                printf("The son process encountered an error before timeout.\n");
+                restartPending = 1; // Imposta il flag per il riavvio
+                
+                // Fondamentale: impedisce alla poll di ascoltare ulteriormente un processo morto
+                fds[1].fd = -1;     
+            }
+        }
+    }
+
+    // Pulizia finale
+    close(timerFd);
+    if(sonFd != -1) close(sonFd);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

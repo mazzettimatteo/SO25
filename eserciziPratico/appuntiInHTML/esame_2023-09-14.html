@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-09-14</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-09-14</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#listlink-py">listlink.py</a></li>
+                <li><a href="#tester-py">tester.py</a></li>
+                <li><a href="#vreaddir-c">vreaddir.c</a></li>
+                <li><a href="#vreaddir-c">vreaddir.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="listlink-py">
+            <h2>File: listlink.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma python o uno script bash che data una directory passata come parametro
+produca una lista dei link simbolici presenti nel sottoalbero che fanno riferimento allo stesso file.
+Esempio, in questo caso:
+$ ls -lR /tmp/test
+/tmp/test:
+total 4
+drwxr-xr-x 2 renzo renzo 4096 Sep 10 15:45 d
+-rw-r--r-- 1 renzo renzo 0 Sep 10 15:41 file1
+-rw-r--r-- 1 renzo renzo 0 Sep 10 15:41 file2
+lrwxrwxrwx 1 renzo renzo 5 Sep 10 15:42 sl1 -&gt; file1
+lrwxrwxrwx 1 renzo renzo 5 Sep 10 15:42 sl1bis -&gt; file1
+lrwxrwxrwx 1 renzo renzo 5 Sep 10 15:49 sl2 -&gt; file2
+/tmp/test/d:
+total 0
+lrwxrwxrwx 1 renzo renzo 15 Sep 10 15:45 gsld -&gt; /tmp/test/file1
+lrwxrwxrwx 1 renzo renzo 8 Sep 10 15:43 sld -&gt; ../file1
+il programma lanciato con parametro /tmp/test deve trovare che sl1, sl1bis, d/sld e d/gllsd indicano lo
+stesso file. (similmente dovrebbe rilevare altri insiemi di link simbolici che indicano lo stesso file"""
+
+def main():
+    if(len(sys.argv)!=2):
+        print("Use: python listlink.py &lt;dir/&gt;")
+        exit(1)
+    
+
+    inodeToLink={} #inode-&gt;linkList[]
+    inodeToFile={} 
+
+    for root,dirs,files in os.walk(sys.argv[1]):
+        for f in files:
+            fPath=os.path.join(root,f)
+            fStat=os.stat(fPath)
+            if(os.path.islink(fPath)):
+                linkSrc=os.readlink(fPath)
+                srcInode=fStat.st_ino
+                if(srcInode not in inodeToLink.keys()):
+                    inodeToLink[srcInode]=[]
+                    inodeToFile[srcInode]=linkSrc
+                inodeToLink[srcInode].append(fPath)
+
+    for ino in inodeToFile.keys():
+        print(inodeToFile[ino]+": ")
+        for lk in inodeToLink[ino]:
+            print("- "+lk)
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tester-py">
+            <h2>File: tester.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+import subprocess
+
+def main():
+    test_dir = "test_symlinks_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+        
+    # Creazione della directory principale e della sottocartella 'd'
+    os.makedirs(test_dir)
+    d_dir = os.path.join(test_dir, "d")
+    os.makedirs(d_dir)
+
+    # 1. Creazione dei file reali (vuoti)
+    file1_path = os.path.join(test_dir, "file1")
+    file2_path = os.path.join(test_dir, "file2")
+    open(file1_path, 'a').close()
+    open(file2_path, 'a').close()
+
+    # 2. Creazione dei link simbolici nella directory principale (percorsi relativi)
+    # os.symlink(target, nome_del_link)
+    os.symlink("file1", os.path.join(test_dir, "sl1"))
+    os.symlink("file1", os.path.join(test_dir, "sl1bis"))
+    os.symlink("file2", os.path.join(test_dir, "sl2"))
+
+    # 3. Creazione del link simbolico relativo nella sottocartella 'd'
+    os.symlink("../file1", os.path.join(d_dir, "sld"))
+
+    # 4. Creazione del link simbolico con percorso ASSOLUTO nella sottocartella 'd'
+    abs_file1 = os.path.abspath(file1_path)
+    os.symlink(abs_file1, os.path.join(d_dir, "gsld"))
+
+    print(f"Ambiente di test creato con successo in: {test_dir}\n")
+    print("--- STRUTTURA GENERATA (output di ls -lR) ---")
+    
+    # Esegue ls -lR per mostrare la struttura generata (usando subprocess come da tue linee guida)
+    subprocess.run(["ls", "-lR", test_dir])
+
+    print("\n--- RISULTATO ATTESO DAL TUO PROGRAMMA ---")
+    print(f"Se lanci il tuo script passando come parametro '{test_dir}',")
+    print("dovrebbe raggruppare i link in questo modo (il formato di stampa scegli tu quale usare):")
+    print("\nGruppo 1 (puntano a file1):")
+    print(" - test_symlinks_env/sl1")
+    print(" - test_symlinks_env/sl1bis")
+    print(" - test_symlinks_env/d/sld")
+    print(" - test_symlinks_env/d/gsld")
+    print("\nGruppo 2 (puntano a file2):")
+    print(" - test_symlinks_env/sl2")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="vreaddir-c">
+            <h2>File: vreaddir.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include &lt;fcntl.h&gt;
+
+/*Scrivere la funzione:
+char **vreaddir(const char *path)
+che restituisca l'elenco dei nomi dei file in una directory come vettore di stringhe terminato con un
+puntatore NULL. (lo stesso formato di argv o envp).
+Il vettore e le stringhe dei nomi sono allocate dinamicamente.
+completare l'esercizio con un programma principale che testi il corretto funzionamento della funzione
+vreaddir.*/
+
+char ** vreaddir(const char * path){
+
+    DIR * currDir=opendir(path);
+    struct dirent *dp;
+
+    char **result=NULL; 
+    int size=0;
+
+    while((dp=readdir(currDir))!=NULL){
+        char file[1024]={0};
+        snprintf(file,sizeof(file),"%s/%s",path,dp-&gt;d_name);
+
+        struct stat fileStat;
+        stat(file,&amp;fileStat);
+
+        if(S_ISREG(fileStat.st_mode)){
+            char **temp=realloc(result, (size+1)*sizeof(char *)); //allarga di 1 il vettore result, salvando nelle prime posizioni i contenuti di result
+
+            if(temp==NULL) return NULL;
+
+            result=temp; //sovrascivi result con il nuovo vettore più grande
+
+            result[size]=strdup(file); //inserisci il path del file dentro result
+
+            size++;
+            
+        }
+
+
+    }
+    closedir(currDir);
+
+    result=realloc(result,(size+1)*sizeof(char *));
+    result[size]=NULL;
+
+    return result;
+
+}
+
+
+void test(char *testDirPath){
+
+    int testDir=mkdir(testDirPath, S_IRWXU);
+
+    char f1[1024]={0};
+    snprintf(f1,sizeof(f1),"%s/file1.txt",testDirPath);
+    char f2[1024]={0};
+    snprintf(f2,sizeof(f2),"%s/file2.txt",testDirPath);
+    char f3[1024]={0};
+    snprintf(f3,sizeof(f3),"%s/file3.md",testDirPath);
+
+
+    int fd1=creat(f1, S_IRWXU);
+    int fd2=creat(f2, S_IRWXU);
+    int fd3=creat(f3, S_IRWXU);
+
+    printf("Output shold be somethink like:\n");
+    printf("%s\n",f1);
+    printf("%s\n",f2); 
+    printf("%s\n",f3);
+
+
+}
+
+int main(int argc, char * argv[]){
+
+    test(argv[1]);
+
+    char ** result=vreaddir(argv[1]);
+    
+    printf("Output:\n");
+    for(int i=0;result[i]!=NULL;i++){
+        printf("%s\n",result[i]);
+    }
+    
+    for(int i=0;result[i]!=NULL;i++) free(result[i]);
+    free(result);
+    
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="vreaddir-c">
+            <h2>File: vreaddir.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include &lt;fcntl.h&gt;
+
+/*Scrivere la funzione:
+char **vreaddir(const char *path)
+che restituisca l'elenco dei nomi dei file in una directory come vettore di stringhe terminato con un
+puntatore NULL. (lo stesso formato di argv o envp).
+Il vettore e le stringhe dei nomi sono allocate dinamicamente.
+completare l'esercizio con un programma principale che testi il corretto funzionamento della funzione
+vreaddir.*/
+
+/*Rielaborare l'esercizio precedente per fare in modo che il vettore e le stringhe dei nomi siano allocati
+con una unica operazione malloc (in modo da poter liberare lo spazio usato da vreaddir con una unica
+operazione free.*/
+
+
+
+char ** vreaddir(const char * path){
+
+    DIR * currDir=opendir(path);
+    struct dirent *dp;
+
+    char **result=NULL; 
+    int size=0;
+    int totalChars=0;
+
+    while((dp=readdir(currDir))!=NULL){
+        char file[1024]={0};
+        snprintf(file,sizeof(file),"%s/%s",path,dp-&gt;d_name);
+
+        totalChars+=strlen(file)+1; //+1 per il terminatore di str '\0'
+
+        struct stat fileStat;
+        stat(file,&amp;fileStat);
+
+        if(S_ISREG(fileStat.st_mode)){
+            size++;
+            
+        }
+
+    }
+    rewinddir(currDir);
+
+    result=malloc((size+1)*sizeof(char*) + totalChars*sizeof(char));
+
+
+    int i=0;
+    while((dp=readdir(currDir))!=NULL){
+        char file[1024]={0};
+        snprintf(file,sizeof(file),"%s/%s",path,dp-&gt;d_name);
+
+        struct stat fileStat;
+        stat(file,&amp;fileStat);
+
+        if(S_ISREG(fileStat.st_mode)){
+
+            strcpy(result[i],file); //inserisci il path del file dentro result
+
+            i++;  
+        }
+
+
+    }
+    closedir(currDir);
+
+    result[size]=NULL;
+
+    return result;
+
+}
+
+
+void test(char *testDirPath){
+
+    int testDir=mkdir(testDirPath, S_IRWXU);
+
+    char f1[1024]={0};
+    snprintf(f1,sizeof(f1),"%s/file1.txt",testDirPath);
+    char f2[1024]={0};
+    snprintf(f2,sizeof(f2),"%s/file2.txt",testDirPath);
+    char f3[1024]={0};
+    snprintf(f3,sizeof(f3),"%s/file3.md",testDirPath);
+
+
+    int fd1=creat(f1, S_IRWXU);
+    int fd2=creat(f2, S_IRWXU);
+    int fd3=creat(f3, S_IRWXU);
+
+    printf("Output shold be somethink like:\n");
+    printf("%s\n",f1);
+    printf("%s\n",f2); 
+    printf("%s\n",f3);
+
+
+}
+
+int main(int argc, char * argv[]){
+
+    test(argv[1]);
+
+    char ** result=vreaddir(argv[1]);
+    
+    printf("Output:\n");
+    for(int i=0;result[i]!=NULL;i++){
+        printf("%s\n",result[i]);
+    }
+
+
+    for(int i=0;result[i]!=NULL;i++) free(result[i]);
+    free(result);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

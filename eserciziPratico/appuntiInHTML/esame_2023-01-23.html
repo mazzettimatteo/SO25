@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-01-23</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-01-23</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#difdr-py">difdr.py</a></li>
+                <li><a href="#fifosig-c">fifosig.c</a></li>
+                <li><a href="#fifotext-c">fifotext.c</a></li>
+                <li><a href="#prova-c">prova.c</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="difdr-py">
+            <h2>File: difdr.py</h2>
+            <pre><code class="language-python">
+import os
+import sys
+import shutil
+
+"""Scrivere uno script bash o python difidr che date due directory ne crei una terza e una quarta
+Le nuove directory devono contenere solamente i file aventi lo stesso nome presenti nella prima e nella seconda
+albero. Ogni file della terza directory deve contenere una copia del file nella versione della prima directory,
+mentre nella quarta directory la versione della seconda.
+es.
+* se la direcotry a contiene i file alpha, beta, gamma, delta e la directory b i file beta, delta, epsilon, zeta
+il comando "difdir a b newa newb" crea le directory newa e newb ed entrambe le directory devono
+contenere solo beta e delta (i nomi in comune). newa/beta deve essere una copia di a/beta mentre
+newb/beta una copia di b/beta. In modo simile per a/delta b/delta newa/delta e newb/delta."""
+
+
+def main():
+    if(len(sys.argv)!=5):
+        print("Use: python difdr.py &lt;dir_a/&gt; &lt;dir_b/&gt; &lt;new_a_dir/&gt; &lt;new_b_dir/&gt;")
+        exit(1)
+
+    aContent={} #nomeFile-&gt;pathA
+
+    shared={} #nome-&gt; [pathA, pathB]
+
+    for root,dirs,files in os.walk(sys.argv[1]):
+        for f in files:
+            aContent[f]=os.path.join(root,f)
+
+    for root,dirs,files in os.walk(sys.argv[2]):
+        for f in files:
+            if(f in aContent.keys()):
+                shared[f]=[(aContent[f]), os.path.join(root,f)]
+
+    
+    newA=sys.argv[3]
+    newB=sys.argv[4]
+
+
+    os.mkdir(newA)
+    os.mkdir(newB)
+
+    for f in shared.keys():
+        
+        shutil.copyfile(shared[f][0],os.path.join(newA,f))
+        shutil.copyfile(shared[f][1],os.path.join(newB,f))
+        print(f"File {f} copied")
+
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="fifosig-c">
+            <h2>File: fifosig.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;signal.h&gt;
+
+/*Scrivere un programma fifotext che:
+* crei una named pipe (FIFO) al pathname indicato come primo (e unico) argomento.
+* apra la named pipe in lettura
+* stampi ogni riga di testo ricevuta
+* se la named pipe viene chiusa la riapra
+* se riceve la riga "FINE" termini cancellando la named pipe.
+Esempio:
+fifotext /tmp/ff
+....
+se in un altra shell si fornisce il comando: "echo ciao &gt; /tmp/ff", fifotext stampa ciao e rimane in attesa
+(questo esperimento si può provare più volte). Con il comando "echo FINE &gt; /tmp/ff" fifotext termina.*/
+
+/*Il programma fifosig è una estensione di fifotext. Le righe che riceve attraverso la named pipe sono
+composte da due numeri, il pid di un processo e il numero di un segnale. Per ogni riga correttamente
+formata il segnale indicato viene mandato al processo indicato dal pid.
+In un esempio simile la precedente il comando "echo 12345 15 &gt; /tmp/ff" deve causare l'invio del
+segnale 15 al processo 12345.
+Scrivere il programma fifosig e un programma di prova che scriva nella pipe il proprio pid e il numero
+di SIGUSR1 e controlli di ricevere SIGUSR1.*/
+
+void useless(){}
+
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use: ./fifosig &lt;fifo_path&gt;");
+        return 1;
+    }
+
+    mkfifo(argv[1],0644);
+
+    int fd=open(argv[1],O_RDONLY);
+    if(fd==-1) return 1;
+
+    while(1){
+
+        char input[1024];
+        int len=read(fd,input,sizeof(input));
+        if(len&lt;0) return 1;
+        else if(len==0){
+            //La FIFO è stata chiusa dallo scrittore
+            close(fd);
+            fd=open(argv[1],O_RDONLY);
+            continue;
+        }
+        else{
+            input[len]='\0'; //read non mette il terminatore di stringa
+
+            if(strcmp(input,"FINE\n")==0){ // Uso "FINE\n" perché usando echo lo \n viene inserito autoaticamente 
+                close(fd);
+                remove(argv[1]);
+                break;
+            }
+
+            char *_pid;
+            char *_sig;
+            
+
+            _pid=strtok(input," ");
+            _sig=strtok(NULL, " \n");
+
+            if(_pid==NULL || _sig==NULL) printf("Input non validi!");
+            else{
+                int sig=atoi(_sig);
+                int pid=atoi(_pid);
+
+                kill(pid, sig);
+            }
+
+            
+
+        }
+
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="fifotext-c">
+            <h2>File: fifotext.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+
+/*Scrivere un programma fifotext che:
+* crei una named pipe (FIFO) al pathname indicato come primo (e unico) argomento.
+* apra la named pipe in lettura
+* stampi ogni riga di testo ricevuta
+* se la named pipe viene chiusa la riapra
+* se riceve la riga "FINE" termini cancellando la named pipe.
+Esempio:
+fifotext /tmp/ff
+....
+se in un altra shell si fornisce il comando: "echo ciao &gt; /tmp/ff", fifotext stampa ciao e rimane in attesa
+(questo esperimento si può provare più volte). Con il comando "echo FINE &gt; /tmp/ff" fifotext termina.*/
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use: ./fifotext &lt;fifo_path&gt;");
+        return 1;
+    }
+
+    mkfifo(argv[1],0644);
+
+    int fd=open(argv[1],O_RDONLY);
+    if(fd==-1) return 1;
+
+    while(1){
+
+        char input[1024];
+        int len=read(fd,input,sizeof(input));
+        if(len&lt;0) return 1;
+        else if(len==0){
+            //La FIFO è stata chiusa dallo scrittore
+            close(fd);
+            fd=open(argv[1],O_RDONLY);
+            continue;
+        }
+        else{
+            input[len]='\0'; //read non mette il terminatore di stringa
+
+            if(strcmp(input,"FINE\n")==0){ // Uso "FINE\n" perché usando echo lo \n viene inserito autoaticamente 
+                close(fd);
+                remove(argv[1]);
+                break;
+            }
+
+            printf("%s\n",input);
+
+        }
+
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="prova-c">
+            <h2>File: prova.c</h2>
+            <pre><code class="language-c">
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;string.h&gt;
+
+/* AGGIUNTA: Funzione handler che viene eseguita quando il processo riceve SIGUSR1 */
+void handler(int sig){
+    printf("SUCCESSO! Ho ricevuto il segnale %d (SIGUSR1)\n", sig);
+}
+
+int main(int argc, char *argv[]){
+
+    if(argc != 2){
+        printf("Use: ./prova &lt;fifo_path&gt;\n");
+        return 1;
+    }
+
+    /* AGGIUNTA: Registriamo l'handler per SIGUSR1 prima di eseguire altre operazioni, 
+       altrimenti il processo verrebbe terminato di default alla ricezione del segnale. */
+    signal(SIGUSR1, handler);
+
+    pid_t myPid = getpid();
+
+    /* AGGIUNTA: Creiamo un buffer di caratteri e usiamo snprintf per formattare la stringa 
+       esattamente come richiesto. Questo sostituisce itoa (che non è standard C) 
+       e l'intera logica della execvp. */
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), "%d %d\n", myPid, SIGUSR1);
+
+    /* AGGIUNTA: Apriamo la FIFO direttamente in sola scrittura */
+    int fd = open(argv[1], O_WRONLY);
+    if(fd == -1){
+        printf("Errore nell'apertura della FIFO\n");
+        return 1;
+    }
+
+    /* AGGIUNTA: Scriviamo la stringa formattata nel file descriptor della FIFO */
+    write(fd, buffer, strlen(buffer));
+    close(fd);
+
+    printf("Inviato alla FIFO: %sMi metto in attesa del segnale...\n", buffer);
+
+    /* AGGIUNTA: pause() sospende l'esecuzione del processo finché non riceve un segnale. 
+       In questo modo il programma non termina prima che fifosig abbia il tempo di rispondergli. */
+    pause();
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    test_dir = "test_difdir_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    os.makedirs(test_dir)
+    dir_a = os.path.join(test_dir, "a")
+    dir_b = os.path.join(test_dir, "b")
+    
+    os.makedirs(dir_a)
+    os.makedirs(dir_b)
+
+    # Popoliamo la directory 'a'
+    files_a = ["alpha", "beta", "gamma", "delta"]
+    for f in files_a:
+        path = os.path.join(dir_a, f)
+        with open(path, "w") as file:
+            file.write(f"Questa e' la versione di {f} della directory A\n")
+
+    # Popoliamo la directory 'b'
+    files_b = ["beta", "delta", "epsilon", "zeta"]
+    for f in files_b:
+        path = os.path.join(dir_b, f)
+        with open(path, "w") as file:
+            file.write(f"Questa e' la versione di {f} della directory B\n")
+
+    print(f"Ambiente di test creato con successo in: {test_dir}")
+    print(f"Directory generate: {dir_a} e {dir_b}")
+    print("I file in comune sono 'beta' e 'delta'.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

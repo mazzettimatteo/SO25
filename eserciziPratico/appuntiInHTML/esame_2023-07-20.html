@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-07-20</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-07-20</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#cprl-c">cprl.c</a></li>
+                <li><a href="#cprlt-c">cprlt.c</a></li>
+                <li><a href="#notascii-py">notascii.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="cprl-c">
+            <h2>File: cprl.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;sys/stat.h&gt;
+#include &lt;unistd.h&gt;
+
+/*scrivere un programma cprl che si comporti come il comando "cp -rl". cprl ha due parametri:
+cprl a b
+deve copiare l'intera struttura delle directory dell'albero che ha come radice a in un secondo albero
+con radice b. I file non devono essere copiati ma collegati con link fisici.
+(l'operazione deve essere fatta dal codice C, senza lanciare altri programmi/comandi*/
+
+void recCopy(char * src, char *dst){
+
+    DIR * srcDir=opendir(src);
+    struct dirent *dp;
+
+    while((dp=readdir(srcDir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s", src, dp-&gt;d_name);
+
+        struct stat dpStat;
+        lstat(dpPath,&amp;dpStat);
+
+        char destination[1024]={0};
+        snprintf(destination,sizeof(destination),"%s/%s",dst,dp-&gt;d_name);
+
+        if(S_ISDIR(dpStat.st_mode)){
+            mkdir(destination, S_IRWXU);
+            recCopy(dpPath, destination);
+        }
+        else{
+            link(dpPath,destination);
+        }
+
+    }
+    closedir(srcDir);
+
+
+}
+
+
+int main(int argc, char * argv[]){
+
+    if(argc!=3){
+        printf("Use: ./cplr &lt;src_dir/&gt; &lt;dest_dir/&gt;");
+        return 1;
+    }
+
+    DIR *dest=opendir(argv[2]);
+    if(dest==NULL){
+        mkdir(argv[2],S_IRWXU); 
+    }
+    else{
+        closedir(dest);
+    }
+    recCopy(argv[1], argv[2]);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="cprlt-c">
+            <h2>File: cprlt.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;sys/stat.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;time.h&gt;
+#include&lt;sys/sendfile.h&gt;
+#include &lt;fcntl.h&gt;
+
+
+/*scrivere un programma cprl che si comporti come il comando "cp -rl". cprl ha due parametri:
+cprl a b
+deve copiare l'intera struttura delle directory dell'albero che ha come radice a in un secondo albero
+con radice b. I file non devono essere copiati ma collegati con link fisici.
+(l'operazione deve essere fatta dal codice C, senza lanciare altri programmi/comandi*/
+
+/*Il programma cprlt ha 3 paramentri: un tempo in secondi da epoch, una directory sorgente e una di
+destinazione. es:
+cprl a b 1689577839
+Il programma si deve comportare come cprl dell'esercizio 1 con la differenza che i file con tempo di
+ultima modifica precedente al tempo indicato nel parametro vengono collegati con link fisici gli altri
+devono essere copiati*/
+void recCopy(char * src, char *dst, time_t time){
+
+    DIR * srcDir=opendir(src);
+    struct dirent *dp;
+
+    while((dp=readdir(srcDir))!=NULL){
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s", src, dp-&gt;d_name);
+
+        struct stat dpStat;
+        lstat(dpPath,&amp;dpStat);
+
+        char destination[1024]={0};
+        snprintf(destination,sizeof(destination),"%s/%s",dst,dp-&gt;d_name);
+
+        if(S_ISDIR(dpStat.st_mode)){
+            mkdir(destination, S_IRWXU);
+            recCopy(dpPath, destination,time);
+        }
+        else{
+            if(dpStat.st_mtime&lt;time){
+                link(dpPath,destination);
+            }
+            else{
+                int dpFd=open(dpPath,O_RDONLY);
+                int newFd=creat(destination,O_WRONLY);
+                sendfile(newFd, dpFd, NULL, dpStat.st_size);
+            }
+            
+        }
+
+    }
+    closedir(srcDir);
+
+
+}
+
+
+int main(int argc, char * argv[]){
+
+    if(argc!=4){
+        printf("Use: ./cplr &lt;src_dir/&gt; &lt;dest_dir/&gt; &lt;time&gt;");
+        return 1;
+    }
+
+    DIR *dest=opendir(argv[2]);
+    if(dest==NULL){
+        mkdir(argv[2],S_IRWXU); 
+    }
+    else{
+        closedir(dest);
+    }
+    recCopy(argv[1], argv[2], atol(argv[3]));
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="notascii-py">
+            <h2>File: notascii.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma python o uno script bash che data una directory produca un elenco dei file e
+delle directory che non potrebbero essere copiati in file system che supportino solo caratteri ascii nei
+nomi."""
+
+def main():
+    if(len(sys.argv)!=2):
+        print("Use: python notascii.py &lt;dir/&gt;")
+        exit(1)
+    
+    result=[]
+
+    ''' SCANDIR NON È PER IMPLEMENTAZIONE RICORSIVA, BISOGNEREBBE SCRIVERE UNA FUNZIONE recScandir
+        for entry in os.scandir(sys.argv[1]):
+            entryPath=entry.path
+            if(not entryPath.isascii()):
+                result.append(entryPath)
+
+        
+    '''
+    for root,dirs,files in os.walk(sys.argv[1]):
+
+        for d in dirs:
+            dPath=os.path.join(root,d)
+            if(not dPath.isascii()):
+                result.append(dPath)
+
+        for f in files:
+            fPath=os.path.join(root,f)
+            if(not fPath.isascii()):
+                result.append(fPath)
+    
+    for r in result:
+            print(r)
+            
+        
+'''Se volessi che controlla solo in nome del file e non il suo path bisognerebbe sostituire dPath e fPath semplicemente con d ed f'''
+ 
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+import subprocess
+
+def main():
+    test_env = "test_cprl_env"
+    src_dir = os.path.join(test_env, "src_dir")
+    dst_dir = os.path.join(test_env, "dst_dir")
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_env):
+        shutil.rmtree(test_env)
+
+    # Creazione della struttura delle directory
+    os.makedirs(src_dir)
+    os.makedirs(dst_dir) # Creiamo la dir di destinazione principale
+    
+    sub_dir = os.path.join(src_dir, "sottocartella")
+    os.makedirs(sub_dir)
+
+    # Creazione dei file di test
+    with open(os.path.join(src_dir, "file_radice.txt"), "w") as f:
+        f.write("Testo radice\n")
+        
+    with open(os.path.join(sub_dir, "file_interno.txt"), "w") as f:
+        f.write("Testo interno\n")
+
+    print("Ambiente di test creato con successo in: " + test_env)
+    print("Compilazione del file C...")
+    
+    # Compilazione tramite subprocess
+    compilation = subprocess.run(["gcc", "cprl.c", "-o", "cprl"], capture_output=True, text=True)
+    if compilation.returncode != 0:
+        print("Errore di compilazione:\n" + compilation.stderr)
+        exit(1)
+
+    print("Esecuzione del programma C...\n")
+    # Esecuzione del programma compilato
+    subprocess.run(["./cprl", src_dir, dst_dir])
+
+    print("--- RISULTATO ATTESO ---")
+    print("Dovresti vedere la cartella src_dir e dst_dir con la stessa struttura.")
+    print("I file corrispondenti DEVONO avere lo stesso numero iniziale (inode).")
+    print("------------------------\n")
+    
+    # Esecuzione di ls -liR per mostrare gli inode e la struttura
+    subprocess.run(["ls", "-liR", test_env])
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+import subprocess
+import time
+
+def main():
+    test_env = "test_cprlt_env"
+    src_dir = os.path.join(test_env, "src_dir")
+    dst_dir = os.path.join(test_env, "dst_dir")
+
+    # Pulizia preventiva
+    if os.path.exists(test_env):
+        shutil.rmtree(test_env)
+
+    os.makedirs(src_dir)
+
+    # Calcolo dei timestamp rispetto al tempo di esecuzione
+    current_time = int(time.time())
+    threshold_time = current_time - 1000 # Il tempo soglia che passeremo come parametro
+    old_time = current_time - 2000       # Tempo nel passato (da linkare)
+    new_time = current_time              # Tempo nel presente (da copiare)
+
+    # 1. Creazione file VECCHIO
+    old_file = os.path.join(src_dir, "file_vecchio.txt")
+    with open(old_file, "w") as f:
+        f.write("Questo file e' antecedente alla soglia.\n")
+    os.utime(old_file, (old_time, old_time))
+
+    # 2. Creazione file NUOVO
+    new_file = os.path.join(src_dir, "file_nuovo.txt")
+    with open(new_file, "w") as f:
+        f.write("Questo file e' successivo alla soglia.\n")
+    os.utime(new_file, (new_time, new_time))
+
+    print(f"Ambiente creato. Soglia temporale (Epoch): {threshold_time}")
+    print("Compilazione del file C...")
+    
+    compilation = subprocess.run(["gcc", "cprlt.c", "-o", "cprlt"], capture_output=True, text=True)
+    if compilation.returncode != 0:
+        print("Errore di compilazione:\n" + compilation.stderr)
+        exit(1)
+
+    print("Esecuzione del programma C...\n")
+    # Lanciamo il programma passando il tempo come stringa
+    subprocess.run(["./cprlt", src_dir, dst_dir, str(threshold_time)])
+
+    print("--- RISULTATO ATTESO ---")
+    print("file_vecchio.txt -&gt; STESSO INODE in src e dst (Hard Link)")
+    print("file_nuovo.txt   -&gt; INODE DIVERSO (Copia Fisica tramite sendfile)")
+    print("------------------------\n")
+    
+    subprocess.run(["ls", "-liR", test_env])
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+import subprocess
+
+def main():
+    test_dir = "test_ascii_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    # Creazione della directory principale
+    os.makedirs(test_dir)
+
+    # 1. Elementi puramente ASCII (NON devono essere segnalati dal tuo programma)
+    dir_ascii = os.path.join(test_dir, "cartella_normale")
+    os.makedirs(dir_ascii)
+    open(os.path.join(test_dir, "file_standard.txt"), "w").close()
+    open(os.path.join(dir_ascii, "documento.pdf"), "w").close()
+
+    # 2. Elementi con caratteri non-ASCII (DEVONO essere segnalati)
+    dir_non_ascii = os.path.join(test_dir, "cartella_espanol".replace("n", "ñ"))
+    os.makedirs(dir_non_ascii)
+
+    open(os.path.join(test_dir, "città.txt"), "w").close()
+    open(os.path.join(dir_ascii, "file_uber.txt".replace("u", "ü")), "w").close()
+    open(os.path.join(test_dir, "nome_con_c.png".replace("c", "ç")), "w").close()
+
+    # Questo file in sé ha un nome ASCII, ma si trova in una directory non-ASCII.
+    open(os.path.join(dir_non_ascii, "file_interno_ok.txt"), "w").close()
+
+    print(f"Ambiente di test creato con successo in: {test_dir}\n")
+
+    print("--- STRUTTURA GENERATA ---")
+    subprocess.run(["ls", "-R", test_dir])
+
+    print("\n--- RISULTATO ATTESO DAL TUO PROGRAMMA ---")
+    print("Il tuo script lanciato sulla directory di test dovrebbe individuare i seguenti elementi:")
+    print(f" - {os.path.join(test_dir, 'cartella_espanol'.replace('n', 'ñ'))}")
+    print(f" - {os.path.join(test_dir, 'città.txt')}")
+    print(f" - {os.path.join(dir_ascii, 'file_uber.txt'.replace('u', 'ü'))}")
+    print(f" - {os.path.join(test_dir, 'nome_con_c.png'.replace('c', 'ç'))}")
+    print("\nNota: se il tuo programma stampa i percorsi completi, verifica se vuoi includere anche 'file_interno_ok.txt' dato che il suo path include una cartella non-ASCII, oppure se vuoi testare solo il nome base ('basename') di ogni nodo dell'albero.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

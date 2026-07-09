@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2024-02-14</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2024-02-14</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#catls-py">catls.py</a></li>
+                <li><a href="#run_name-c">run_name.c</a></li>
+                <li><a href="#search_name-c">search_name.c</a></li>
+                <li><a href="#test-py">test.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="catls-py">
+            <h2>File: catls.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+import subprocess
+
+"""Scrivere un programma python o uno script bash che crei un catalogo dei file presenti nella directory
+passata come parametro (o la directory corrente se manca il parametro).
+Il catalogo deve essere ordinato in categorie in base alla stringa ritornata dal comando 'file'.
+Es:
+$ catls
+ASCII text:
+testo1
+favourites.txt
+directory:
+mydir
+lib
+Unicode text, UTF-8 text:
+unitesto"""
+
+def main():
+    argc=len(sys.argv)
+    workingDir=""
+    if(argc&gt;2):
+        print("Use: python ./catls [dir/]       (default dir is '.')")
+        exit(1)
+    elif(argc==1):
+        workingDir="."
+    else:
+        workingDir=sys.argv[1]
+
+    result={} #dict typeOfFile -&gt; listOfFiles[]
+
+    for root, dirs, files in os.walk(workingDir):
+        dirs.clear() #deve lavorare solo nella dir corrente, non anche nelle sotto dir
+        for f in files:
+            f=os.path.join(root,f)
+            cmd=subprocess.run(["file", f],capture_output=True, text=True)
+            currFile=cmd.stdout.split(": ")[0]
+            descriptions=cmd.stdout.split(": ")[1].split(", ")
+            for k in descriptions:
+                if(k not in result.keys()):
+                    result[k]=[]
+                result[k].append(currFile)
+    
+    for k in result.keys():
+        print(k)
+        for r in result[k]:
+            print(r)
+
+        print("-------")
+
+"""Il codice funziona ma non lista le directory(risolvi iterando con os.scandir o os.listdir al posto di o.walk),
+inoltre separa i testi Unicode da UTF-8, al posto di fare .split(", ") era meglio usare .strip(...)"""
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="run_name-c">
+            <h2>File: run_name.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;sys/wait.h&gt;
+#include&lt;fcntl.h&gt;
+/*Il programma run_name deve cercare nel sottoalbero della directory corrente tutti i file eseguibili con
+un nome file specifico (primo parametro di run_name) e li deve mettere in esecuzione uno dopo l'altro
+passando i successivi parametri.
+Ad esempio il comando:
+./run_name testprog a b c
+deve cercare i file eseguibili chiamati testprog nell'albero della directory corrente. Poniamo
+siano ./testprog, ./dir1/testprog, ./dir/dir3/testprog, run_name deve eseguire
+testprog a b c
+per 3 volte. Nella prima esecuzione la working directory deve essere la dir corrente '.', la seconda
+deve avere come working directory './dir1' e la terza './dir2/dir3'*/
+
+void recursiveSearch(char *query, char * dir, char *params[],int numOfParams){
+    
+    DIR * currDir=opendir(dir);
+    if(currDir==NULL) return;
+    struct dirent * dp;
+
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath, sizeof(dpPath), "%s/%s", dir, dp-&gt;d_name);
+
+        struct stat dpStat;
+        stat(dpPath,&amp;dpStat);
+
+        if((dpStat.st_mode &amp; S_IXUSR) &amp;&amp; strcmp(dp-&gt;d_name,query)==0){
+            int fd=open(dpPath, O_RDONLY);
+            char content[4];
+            int len=read(fd,content,sizeof(content)); 
+            if(len&lt;0) continue;
+            else{
+                if(content[0]=='#' &amp;&amp; content[1]=='!') {
+                    
+                    int sonPid=fork();
+                    if(sonPid==0){
+                        chdir(dir);//Perché viene richiesto cambio della dir di esecuzione
+
+                        char *parameters[1024];
+                        parameters[0]=dp-&gt;d_name;
+                        int j=1;
+                        for(int i=3;i&lt;numOfParams;i++){
+                            parameters[j]=params[i];
+                            j++;
+                        }
+                        parameters[j]=NULL;
+                        
+                        char dpPath_son[1024]={0};
+                        snprintf(dpPath_son,sizeof(dpPath_son),"./%s",dp-&gt;d_name);
+
+                        execv(dpPath_son,parameters); 
+                    }
+                    else{
+                        waitpid(sonPid,NULL,0);
+                    }
+
+                }
+                else if(content[0]==0x7f &amp;&amp; content[1] == 'E' &amp;&amp; content[2] == 'L' &amp;&amp; content[3] == 'F') {
+                    int sonPid=fork();
+                    if(sonPid==0){
+                        chdir(dir);
+
+                        char *parameters[1024];
+                        parameters[0]=dp-&gt;d_name;
+                        int j=1;
+                        for(int i=3;i&lt;numOfParams;i++){
+                            parameters[j]=params[i];
+                            j++;
+                        }
+                        parameters[j]=NULL;
+
+                        char dpPath_son[1024]={0};
+                        snprintf(dpPath_son,sizeof(dpPath_son),"./%s",dp-&gt;d_name);
+
+                        execv(dpPath_son,parameters);
+                    }
+                    else{
+                        waitpid(sonPid,NULL,0);
+                    }
+                }
+                close(fd);
+            }
+            
+               
+        }
+    
+        if(S_ISDIR(dpStat.st_mode)){
+            recursiveSearch(query, dpPath, params,numOfParams);
+        }
+
+    }
+    closedir(currDir);
+
+}
+
+
+
+int main(int argc, char * argv[]){
+
+    //Facciamo che voglio specificare la directory di partenza da cui cercare
+
+    if(argc&lt;4){
+        printf("Use: ./run_name &lt;string_to_search&gt; &lt;dir/&gt; &lt;param_1&gt; ... &lt;param_n&gt;");
+        return 1;
+    }
+
+    recursiveSearch(argv[1], argv[2], argv, argc); //Ricorda che i parametri, che sono gli stessi per tutti, iniziano dalla posizione 3
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="search_name-c">
+            <h2>File: search_name.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;fcntl.h&gt;
+/*Scrivere un programma search_name che deve cercare nel sottoalbero della directory corrente tutti i
+file eseguibili con un nome file specifico passato come primo e unico parametro indicando per ogni
+file il tipo di eseguibile (script o eseguibile binario).
+Ad esempio il comando:
+./search_name testprog
+deve cercare i file eseguibili chiamati testprog nell'albero della directory corrente. Poniamo
+siano ./testprog, ./dir1/testprog, ./dir/dir3/testprog, search_name deve stampare:
+. /testprog: script
+./dir1/testprog: ELF executable
+./dir/dir3/testprog: ELF executable*/
+
+void recursiveSearch(char *query, char * dir){
+    
+    DIR * currDir=opendir(dir);
+    if(currDir==NULL) return;
+    struct dirent * dp;
+
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath, sizeof(dpPath), "%s/%s", dir, dp-&gt;d_name);
+
+        struct stat dpStat;
+        stat(dpPath,&amp;dpStat);
+
+        if((dpStat.st_mode &amp; S_IXUSR) &amp;&amp; strcmp(dp-&gt;d_name,query)==0){
+            int fd=open(dpPath, O_RDONLY);
+            char content[4];
+            int len=read(fd,content,sizeof(content)); 
+            if(len&lt;0) continue;
+            else{
+                if(content[0]=='#' &amp;&amp; content[1]=='!') printf("%s: script\n",dpPath);
+                else if(content[0]==0x7f &amp;&amp; content[1] == 'E' &amp;&amp; content[2] == 'L' &amp;&amp; content[3] == 'F') 
+                    printf("%s: ELF exec\n",dpPath);
+                close(fd);
+            }
+            
+               
+        }
+    
+        if(S_ISDIR(dpStat.st_mode)){
+            recursiveSearch(query, dpPath);
+        }
+
+    }
+    closedir(currDir);
+
+}
+
+
+
+int main(int argc, char * argv[]){
+
+    //Facciamo che voglio specificare la directory di partenza da cui cercare
+
+    if(argc!=3){
+        printf("Use: ./search_name &lt;string_to_search&gt; &lt;dir/&gt;");
+        return 1;
+    }
+
+    recursiveSearch(argv[1], argv[2]);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import stat
+import shutil
+
+def main():
+    test_dir = "test_search_name_env"
+
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+        
+    os.makedirs(test_dir)
+    os.makedirs(os.path.join(test_dir, "dir1"))
+    os.makedirs(os.path.join(test_dir, "dir2"))
+    os.makedirs(os.path.join(test_dir, "dir2", "dir3"))
+
+    # 1. Caso: Script eseguibile nella directory radice
+    script_path = os.path.join(test_dir, "testprog")
+    with open(script_path, "w") as f:
+        f.write("#!/bin/bash\necho 'hello'")
+    os.chmod(script_path, stat.S_IRWXU)
+
+    # 2. Caso: Eseguibile ELF in dir1
+    elf_path = os.path.join(test_dir, "dir1", "testprog")
+    with open(elf_path, "wb") as f:
+        f.write(b"\x7fELF_finto_codice_binario")
+    os.chmod(elf_path, stat.S_IRWXU)
+
+    # 3. Caso: Eseguibile ELF molto annidato in dir2/dir3
+    elf2_path = os.path.join(test_dir, "dir2", "dir3", "testprog")
+    with open(elf2_path, "wb") as f:
+        f.write(b"\x7fELF_altro_codice_binario")
+    os.chmod(elf2_path, stat.S_IRWXU)
+
+    # 4. ESCA: File con il nome giusto, ma NON eseguibile (da ignorare)
+    not_exec_path = os.path.join(test_dir, "dir2", "testprog")
+    with open(not_exec_path, "w") as f:
+        f.write("#!/bin/bash\necho 'non ho i permessi'")
+    os.chmod(not_exec_path, stat.S_IRUSR | stat.S_IWUSR)
+
+    # 5. ESCA: File eseguibile e script, ma con nome SBAGLIATO (da ignorare)
+    wrong_name_path = os.path.join(test_dir, "dir1", "altro_script")
+    with open(wrong_name_path, "w") as f:
+        f.write("#!/bin/bash\necho 'nome sbagliato'")
+    os.chmod(wrong_name_path, stat.S_IRWXU)
+
+    print("Ambiente di test generato con successo: " + test_dir)
+    print("\nComando da lanciare per testare:")
+    print(" ./search_name testprog " + test_dir)
+    
+    print("\n--- RISULTATO ATTESO DOPO L'ESECUZIONE ---")
+    print(f"{script_path}: script")
+    print(f"{elf_path}: ELF executable")
+    print(f"{elf2_path}: ELF executable")
+    print("\nI file in 'dir2/testprog' (non eseguibile) e 'dir1/altro_script' (nome errato) non devono apparire nell'output.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import stat
+import shutil
+
+def main():
+    test_dir = "test_run_name_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+        
+    # Creazione delle directory dell'albero
+    dir1 = os.path.join(test_dir, "dir1")
+    dir3 = os.path.join(test_dir, "dir2", "dir3")
+    os.makedirs(dir1)
+    os.makedirs(dir3)
+
+    # Funzione per creare uno script eseguibile di test
+    def create_executable_script(folder_path):
+        file_path = os.path.join(folder_path, "testprog")
+        with open(file_path, "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("echo \"[testprog] Eseguito in directory: $(pwd)\"\n")
+            f.write("echo \"[testprog] Argomenti ricevuti: $@\"\n")
+        # Imposta i permessi di lettura ed esecuzione
+        os.chmod(file_path, stat.S_IRWXU)
+
+    # Crea i tre file testprog nelle rispettive cartelle
+    create_executable_script(test_dir)
+    create_executable_script(dir1)
+    create_executable_script(dir3)
+
+    print("Ambiente di test creato con successo: " + test_dir)
+    print("\nComando da lanciare per testare (supponendo di aver specificato la cartella di partenza):")
+    print(f" ./run_name testprog {test_dir} arg1 arg2 arg3")
+    
+    print("\n--- RISULTATO ATTESO ---")
+    print(f"Il programma deve stampare 3 blocchi di output simili a questo:")
+    print(f"[testprog] Eseguito in directory: &lt;percorso_assoluto_della_sottocartella&gt;")
+    print(f"[testprog] Argomenti ricevuti: arg1 arg2 arg3")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    test_dir = "test_catls_env"
+
+    # Pulizia preventiva dell'ambiente di test
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    # Creazione della directory principale del test
+    os.makedirs(test_dir)
+
+    # 1. Creazione di file di testo ASCII
+    with open(os.path.join(test_dir, "testo1"), "w", encoding="ascii") as f:
+        f.write("Questo e un semplice file di testo ASCII.\n")
+
+    with open(os.path.join(test_dir, "favourites.txt"), "w", encoding="ascii") as f:
+        f.write("Lista dei preferiti.\n")
+
+    # 2. Creazione di sotto-directory
+    os.makedirs(os.path.join(test_dir, "mydir"))
+    os.makedirs(os.path.join(test_dir, "lib"))
+
+    # 3. Creazione di un file in formato Unicode UTF-8 (con caratteri speciali)
+    with open(os.path.join(test_dir, "unitesto"), "w", encoding="utf-8") as f:
+        f.write("Testo con caratteri speciali UTF-8: à è ì ò ù €\n")
+
+    print("Ambiente di test creato con successo: " + test_dir)
+    print("\nComandi da lanciare per testare lo script:")
+    print("1) python catls.py " + test_dir + "  (passando la directory)")
+    print("2) cd " + test_dir + " &amp;&amp; python ../catls.py  (senza parametri, usa la dir corrente)")
+    
+    print("\n--- RISULTATO ATTESO (l'ordine delle categorie può variare) ---")
+    print("ASCII text:")
+    print("testo1")
+    print("favourites.txt")
+    print("directory:")
+    print("mydir")
+    print("lib")
+    print("Unicode text, UTF-8 text:")
+    print("unitesto")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

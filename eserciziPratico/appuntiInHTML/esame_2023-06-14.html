@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-06-14</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-06-14</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#createst-py">createst.py</a></li>
+                <li><a href="#rmrelsymlink-py">rmrelsymlink.py</a></li>
+                <li><a href="#tfdtest-c">tfdtest.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="createst-py">
+            <h2>File: createst.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+import subprocess
+
+def main():
+    test_dir = "test_rmsym_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    # Creazione directory
+    os.makedirs(test_dir)
+    subdir = os.path.join(test_dir, "subdir")
+    os.makedirs(subdir)
+
+    # Creazione di un file reale di riferimento
+    real_file = os.path.join(test_dir, "file_reale.txt")
+    with open(real_file, "w") as f:
+        f.write("Dati del file reale\n")
+
+    # 1. Creazione link ASSOLUTO (Deve essere MANTENUTO)
+    abs_target = os.path.abspath(real_file)
+    os.symlink(abs_target, os.path.join(test_dir, "link_assoluto"))
+
+    # 2. Creazione link RELATIVI (Devono essere CANCELLATI)
+    # Link relativo nello stesso livello
+    os.symlink("file_reale.txt", os.path.join(test_dir, "link_relativo_locale"))
+    # Link relativo che sale di una cartella
+    os.symlink("../file_reale.txt", os.path.join(subdir, "link_relativo_su"))
+
+    print("Ambiente di test creato con successo in: " + test_dir + "\n")
+    print("--- STRUTTURA INIZIALE (output di ls -lR) ---")
+    subprocess.run(["ls", "-lR", test_dir])
+
+    print("\n--- RISULTATO ATTESO DAL TUO PROGRAMMA ---")
+    print("Il tuo script dovra' cancellare:")
+    print(" - " + os.path.join(test_dir, "link_relativo_locale"))
+    print(" - " + os.path.join(subdir, "link_relativo_su"))
+    print("\nDovra' invece MANTENERE:")
+    print(" - " + os.path.join(test_dir, "link_assoluto"))
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="rmrelsymlink-py">
+            <h2>File: rmrelsymlink.py</h2>
+            <pre><code class="language-python">
+import os
+import sys
+
+"""Scrivere un programma python o uno script bash che, passata una directory come parametro, cancelli
+nel sottoalbero generato dalla directory passata come parametro tutti i link simbolici relativi (e non
+cancelli quelli assoluti)
+lrwxrwxrwx 1 renzo renzo 13 Jun 11 17:03 hostname1 -&gt; /etc/hostname
+lrwxrwxrwx 1 renzo renzo 15 Jun 11 17:04 hostname2 -&gt; ../etc/hostname
+il primo va mantenuto e il secondo cancellato"""
+
+def main():
+    if(len(sys.argv)!=2):
+        print("Use: python rmrelsymlink.py &lt;dir/&gt;")
+        exit(1)
+    
+    links=[]
+    for root,dirs,files in os.walk(sys.argv[1]):
+        for f in files:
+            fPath=os.path.join(root,f)
+            if(os.path.islink(fPath)):
+                links.append(fPath)
+            
+
+    print("Removed links that are relative:")
+    for lk in links:
+        linkSrc=os.readlink(lk)
+        if(not os.path.isabs(linkSrc)):
+            os.remove(lk)
+            print(lk)
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tfdtest-c">
+            <h2>File: tfdtest.c</h2>
+            <pre><code class="language-c">
+#define _GNU_SOURCE
+
+#include&lt;stdio.h&gt;
+#include&lt;stdlib.h&gt;
+#include &lt;sys/timerfd.h&gt;
+#include&lt;string.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdint.h&gt;
+
+/*facendo uso dei timerfd (vedi timerfd_create) scrivere un programma che stampi una stringa a
+intervalli regolari. (il parametro ha tre campi separati da virgola: il numero di iterazioni, l'intervallo fra
+iterazione e la stringa da salvare:
+tfdtest 4,1.1,ciao
+deve stampare ciao quattro volte, rispettivamente dopo 1.1 secondi, 2.2 secondi, 3.3 secondi 4.4
+secondi e terminare. L'esecuzione dovrebbe essere simile alla seguente:
+$ tfdtest 4,1.1,ciao
+1.100267 ciao
+2.200423 ciao
+3.300143 ciao
+4.400053 ciao*/
+
+int main(int argc, char * argv[]){
+    //2 metodi, o far ripartire il timer ogni volta dentro il for, oppure impostare l'interval del timer in modo che riparta da solo
+
+    char *_times;
+    char *_interval;
+    char *text;
+
+    _times=strtok(argv[1],",");
+    _interval=strtok(NULL,",");
+    text=strtok(NULL,",");
+
+    //printf("%s %s %s\n", arg1,arg2,arg3);
+
+    int times=atoi(_times);
+    float interval=atof(_interval);
+    int timerFd=timerfd_create(CLOCK_MONOTONIC,0);
+
+    struct itimerspec uTimer;
+    uTimer.it_value.tv_sec= (time_t) interval; //Tempo impostato nel timer in secondi
+    uTimer.it_value.tv_nsec=(interval-uTimer.it_value.tv_sec)*1000000000; //Tempo che resta dalla divisione per i secondi 
+    
+    uTimer.it_interval.tv_nsec=0; //Ogni quanto ripetere il timer: 0=&gt;non ripeterlo, 
+    //se avessi scelto di farlo ripetere ogni interval secondi avrei dovuto porli = al campo it_value.tv_(n)sec
+    uTimer.it_interval.tv_sec=0;
+
+    
+
+    for(int i=0;i&lt;times;i++){
+
+        timerfd_settime(timerFd,0,&amp;uTimer,NULL); //Avvia il timer
+
+        u_int64_t expiration; //parametro per endere la read bloccante
+        read(timerFd,&amp;expiration,sizeof(expiration)); 
+        /*read(timerFd,NULL,0) non funziona:
+        Prima di avviare tutta la logica di interazione con lo scheduler e le code di attesa appena descritta, 
+        il kernel esegue dei controlli preliminari e rigorosi sui parametri passati alla system call. 
+        L'implementazione di timerfd impone che il buffer di lettura sia tassativamente di almeno 8 byte.
+        Avendo ricevuto NULL e una dimensione di 0, il kernel faceva fallire la read all'istante 
+        restituendo l'errore EINVAL (argomento non valido). Questo causava l'uscita prematura dalla system call
+        prima ancora di poter valutare se bloccare o meno il processo.
+        */
+        printf("------------------------------%s\n",text);
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

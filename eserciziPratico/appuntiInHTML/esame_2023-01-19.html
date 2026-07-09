@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-01-19</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-01-19</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#merge2dirs-py">merge2dirs.py</a></li>
+                <li><a href="#stdin2pipe-c">stdin2pipe.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="merge2dirs-py">
+            <h2>File: merge2dirs.py</h2>
+            <pre><code class="language-python">
+import os
+import sys
+import shutil
+
+"""Scrivere uno script bash o python che faccia il merge di due alberi del file system copiandoli in un terzo.
+La gerarchia risultante dovrebbe contenere tutti i file e le directory presenti nel primo o nel secondo albero.
+Se due file hanno lo stesso percorso e nomi uguali nei due alberi di partenza i contenuti devono essere
+concatenati nel file risultante"""
+
+def main():
+    if(len(sys.argv)!=4):
+        print("Use: python merge2dirs.py &lt;src_dir1/&gt; &lt;src_dir2/&gt; &lt;dest_dir/&gt;")
+        exit(1)
+    
+    try:
+        os.mkdir(sys.argv[3])
+    except(FileExistsError):
+        print(f"{sys.argv[1]} esisteva già, non l'ho ricreata")
+
+    for root,dirs,files in os.walk(sys.argv[1]):
+        for d in dirs:
+            relRoot=os.path.relpath(root,sys.argv[1])
+            newDir=os.path.join(sys.argv[3],relRoot,d)
+            os.makedirs(newDir, exist_ok=True)
+        for f in files:
+            fPath=os.path.join(root,f)
+            relRoot=os.path.relpath(root,sys.argv[1])
+            newFile=os.path.join(sys.argv[3],relRoot,f)
+            shutil.copyfile(fPath,newFile)
+
+
+    for root,dirs,files in os.walk(sys.argv[2]):
+        for d in dirs:
+            relRoot=os.path.relpath(root,sys.argv[2])
+            newDir=os.path.join(sys.argv[3],relRoot,d)
+            os.makedirs(newDir, exist_ok=True)
+        for f in files:
+            fPath=os.path.join(root,f)
+            relRoot=os.path.relpath(root,sys.argv[2])
+            newFile=os.path.join(sys.argv[3],relRoot,f)
+            if(os.path.exists(newFile)):
+                with open(fPath,"r") as sourceFile:
+                    with open(newFile, 'a') as existingFile:
+                        existingFile.write(sourceFile.read()+"\n")
+            else:
+                shutil.copyfile(fPath,newFile)
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="stdin2pipe-c">
+            <h2>File: stdin2pipe.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;sys/wait.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;fcntl.h&gt;
+
+/*Scrivere il programma stdin2pipe che prenda in input due righe di testo, ogni riga contiene un
+comando coi rispettivi parametri. Il programma deve lanciare entrambi i comandi in modo tale
+l'output del primo diventi input del secondo.
+Per esempio, dato il file cmds:
+ls -l
+awk '{print $1}'
+l'esecuzione di:
+stdin2pipe &lt; cmds
+sia equivalente al comando:
+ls -l | awk '{print $1}'*/
+
+
+//IO ALL'ESAME SE ESCE UN ES SIMILE: ●█▀█▄⊂==8 *inculato*
+
+
+
+int main(int argc, char * argv[]){
+    //Gli imput presi con &lt; da shell vengono inseriti non nell'argv ma nel file descriptor 0,
+    //ossia quello di questo programma qui, quindi se leggo con read devo usare fd=0, 
+    //atrimenti leggo con fgets dallo stdin
+
+    char cmd1[1024]={0};
+    char cmd2[1024]={0};
+
+    fgets(cmd1, sizeof(cmd1),stdin); //Mi struttura l'input così: "testo \n altro_testo"
+    fgets(cmd2, sizeof(cmd2),stdin);
+
+
+    char *args1[1024];
+    int i=0;
+    args1[i]=strtok(cmd1," \n");
+
+    while(args1[i]!=NULL){
+        i++;
+        args1[i]=strtok(NULL, " \n");
+    }
+
+
+    char *args2[1024];
+    int j=0;
+    args2[j]=strtok(cmd2," \n");
+    while(args2[j]!=NULL){
+        j++;
+        args2[j]=strtok(NULL, " \n");
+    }
+    
+
+
+    int p[2]; //scrivo in p1 e leggo in p0
+    if(pipe(p)&lt;0) return 1;
+
+    int sonPid=fork();
+
+    if(sonPid==0){ 
+        dup2(p[1],1); //duplica il fd, quello vecchio è p[1], quello nuovo è il secondo arg, in queso caso 1
+        //Quindi dopo dup2 il file descriptor 1 punterà al file descriptor p[1] 
+        //siccome fd=1 è lo stdout e execvp eredita la tabella dei file descriptor allora lo stdout di execvp sarà la pipe(in entrata)
+        close(p[0]);
+        close(p[1]);
+        execvp(args1[0],args1); //
+    }
+    else{
+        int secondSon=fork();
+        if(secondSon==0){
+            dup2(p[0],0); //0 è il fd che corrisponde allo stdin,
+            // così sto dicendo che il nuovo stdin sarà l'uscita della pipe
+            close(p[0]);
+            close(p[1]);
+            execvp(args2[0],args2);//siccome execvp eredita i fd l'input di execvp sarà l'output della pipe, ossia il comando precedente
+        }
+        else{
+            close(p[0]);
+            close(p[1]);
+
+            waitpid(sonPid,NULL,0);
+            waitpid(secondSon,NULL,0);
+        }
+
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

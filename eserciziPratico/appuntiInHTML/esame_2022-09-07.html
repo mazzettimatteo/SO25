@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2022-09-07</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2022-09-07</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#as-py">as.py</a></li>
+                <li><a href="#elfsize-py">elfsize.py</a></li>
+                <li><a href="#rilancia-c">rilancia.c</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="as-py">
+            <h2>File: as.py</h2>
+            <pre><code class="language-python">
+for i in range(1,2):
+    print(i)
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="elfsize-py">
+            <h2>File: elfsize.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma pyhton o uno script bash che calcoli l'ampiezza totale in byte dei file
+eseguibili ELF presenti in tutte le directory passate come parametri o nella directory corrente se non
+viene specificato alcun parametro.
+e.g.
+$ elfsize /bin /usr/bin
+1682573547"""
+
+def main():
+
+    argc=len(sys.argv)
+
+    totSize=0
+    
+
+    if(argc==1):
+        sys.argv.append(".")
+        nDirs=2
+    else:
+        nDirs=argc
+
+    for i in range(1,nDirs):#nel loop nDirs non è compreso
+        for root,dirs,files in os.walk(sys.argv[i]):
+            dirs.clear() #dice nelle dir, non nell'albero delle dir
+            for f in files:
+                fPath=os.path.join(root,f)
+                with open(fPath, "rb") as file:
+                    content=file.read(4) #mi interesssano i primi 4byte
+                    #print(f"{content}\n-----------------------------------\n")
+                    if(content==(b'\x7fELF')):
+                        fStat=os.stat(fPath)
+                        totSize+=fStat.st_size
+
+    #print("\n\n\n\n........................")
+    print(totSize)
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="rilancia-c">
+            <h2>File: rilancia.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;sys/wait.h&gt;
+
+/*Scrivere un programma C rilancia: che esegua il programma indicato in argv[1] con i relativi parametri
+(in argv[2] e seguenti):
+es: rilancia tr a-z A-Z
+esegue il comando tr coi parametri.
+Se il programma lanciato termina senza errori (non per colpa di un segnale e con valore di ritorno 0)
+rilancia deve rieseguire il programma (nell'esempio tr) con i medesimi parametri.*/
+
+int main(int argc, char * argv[]){
+
+    int notKilled;
+    int retValue=0;
+    int negIfNotCmd;
+
+    while(retValue==0){
+        int status;
+        int son1=fork();
+        if(son1==0){
+            negIfNotCmd=execvp(argv[1], &amp;argv[1]); 
+            if(negIfNotCmd==-1) return 1; 
+        }
+        else{
+            waitpid(son1,&amp;status,0);
+            notKilled=WIFEXITED(status);
+            if(notKilled) retValue=WEXITSTATUS(status);
+            else break;
+        }
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    test_dir = "test_elf_env"
+
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    os.makedirs(test_dir)
+
+    # Creazione di un falso file ELF (dimensione: 4 byte di header + 10 byte casuali = 14 byte)
+    with open(os.path.join(test_dir, "fake_exec1.bin"), "wb") as f:
+        f.write(b'\x7fELF' + b'\x00' * 10)
+
+    # Creazione di un secondo falso file ELF (dimensione: 4 byte di header + 20 byte casuali = 24 byte)
+    with open(os.path.join(test_dir, "fake_exec2.bin"), "wb") as f:
+        f.write(b'\x7fELF' + b'\x01' * 20)
+
+    # Creazione di un file NON ELF (la dimensione non deve essere calcolata dal tuo programma)
+    with open(os.path.join(test_dir, "not_an_elf.txt"), "w") as f:
+        f.write("Questo e' un semplice file di testo, non inizia con il magic number.")
+
+    print(f"Ambiente di test creato in: {test_dir}")
+    print("File ELF creati: fake_exec1.bin (14 byte) e fake_exec2.bin (24 byte).")
+    print("Totale atteso dal programma elfsize: 38 byte.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

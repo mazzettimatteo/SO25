@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2023-05-24</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2023-05-24</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#pidcmd-c">pidcmd.c</a></li>
+                <li><a href="#prova-py">prova.py</a></li>
+                <li><a href="#runsame-c">runsame.c</a></li>
+                <li><a href="#symlist-py">symlist.py</a></li>
+                <li><a href="#test-c">test.c</a></li>
+                <li><a href="#test-c">test.c</a></li>
+                <li><a href="#test-py">test.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="pidcmd-c">
+            <h2>File: pidcmd.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;stdlib.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;sys/stat.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+#include&lt;string.h&gt;
+
+/*Scriveere un programma pidcmd che stampi i pid dei processi attivi lanciati con una specifica riga di
+comando. (Devono coincidere tutti gli argomenti)
+es: ll comando "pidcmd less /etc/hostname" deve stampare il numero di processo dei processi attivi
+che sono stati lanciati con "less /etc/hostname"
+(hint: cercare nelle directory dei processi in /proc i "file" chiamati cmdline)*/
+
+int main(int argc, char *argv[]){
+
+
+    char argomenti[1024];
+    size_t target_len = 0;
+    for(int i = 1; i &lt; argc; i++){
+        size_t arg_len = strlen(argv[i]);
+        memcpy(argomenti + target_len, argv[i], arg_len);
+        target_len += arg_len;
+        argomenti[target_len] = '\0';
+        target_len++;
+    }
+
+
+    DIR * proc=opendir("/proc");
+    struct dirent *dp;
+
+    while((dp=readdir(proc))!=NULL){
+
+        if(strcmp(dp-&gt;d_name,".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"/proc/%s",dp-&gt;d_name);
+
+        struct stat dpStat;
+        stat(dpPath,&amp;dpStat);
+
+        int currPid=atoi(dp-&gt;d_name);
+
+        if(S_ISDIR(dpStat.st_mode) &amp;&amp; currPid!=0){ //atoi su stinga non numerica ritorna 0
+                
+            char cmdlinePath[1024]={0};
+            snprintf(cmdlinePath,sizeof(cmdlinePath),"%s/cmdline",dpPath);
+
+            //ora devo aprire il file cmdline, sò già che c'è, lo apro SUBITO senza scansionare la dir
+            int fd=open(cmdlinePath,O_RDONLY);
+            if(fd!=-1){
+                char content[1024];
+                int len=read(fd,content,sizeof(content));
+                if(len&lt;0) continue;
+
+                //se content==argv stampa currPid
+                if(len==target_len &amp;&amp; memcmp(argomenti,content,target_len)==0){
+                    printf("%d\n",currPid);
+                }
+                close(fd);
+            }
+
+        }
+
+    }
+    closedir(proc);
+    
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="prova-py">
+            <h2>File: prova.py</h2>
+            <pre><code class="language-python">
+import os
+import subprocess
+import time
+import sys
+
+def main():
+    binary_name = "./pidcmd"
+    source_name = "pidcmd.c"
+
+    # 1. Compilazione del programma C
+    print(f"Compilazione di {source_name}...")
+    compilation = subprocess.run(["gcc", source_name, "-o", binary_name], capture_output=True, text=True)
+    if compilation.returncode != 0:
+        print("Errore di compilazione!")
+        print(compilation.stderr)
+        sys.exit(1)
+
+    # Usiamo python3 per creare un comando sicuro che accetta stringhe arbitrarie in fondo
+    test_cmd = ["python3", "-c", "import time; time.sleep(3600)", "stringa_test_univoca_2026"]
+
+    print(f"Avvio del processo target in background: {' '.join(test_cmd)}")
+    
+    # 2. Lanciamo il processo in background
+    bg_process = subprocess.Popen(test_cmd)
+    expected_pid = bg_process.pid
+
+    # Attendiamo un istante per permettere al kernel di creare il file in /proc
+    time.sleep(0.5)
+
+    try:
+        print(f"Esecuzione di {binary_name}...")
+        # 3. Eseguiamo il programma C passando gli stessi identici argomenti
+        result = subprocess.run([binary_name] + test_cmd, capture_output=True, text=True)
+        
+        output = result.stdout.strip()
+        detected_pids = output.split()
+
+        print("\n--- RESOCONTO VERIFICA ---")
+        print(f"PID reale generato da Python: {expected_pid}")
+        print(f"PID rilevati dal tuo pidcmd:   {output if output else '[Nessun output]'}")
+        print("--------------------------")
+
+        if str(expected_pid) in detected_pids:
+            print("ESITO TEST: SUCCESS (Il tuo programma funziona perfettamente!)")
+        else:
+            print("ESITO TEST: FAILURE (Il PID atteso non è stato rilevato)")
+
+    finally:
+        # 4. Pulizia del sistema
+        bg_process.terminate()
+        bg_process.wait()
+        print("\nProcesso di background terminato e rimosso.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="runsame-c">
+            <h2>File: runsame.c</h2>
+            <pre><code class="language-c">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/wait.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;string.h&gt;
+
+/*Scrivere un programma che dato il numero di un processo attivo ne lanci uno uguale (lo stesso
+eseguibile con gli stessi parametri, lo stesso environment e nella stessa directory corrente.
+(hint: cercare nella directory del processo da clonare in /proc)*/
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use: ./runsame &lt;PID&gt;\n");
+        return 1;
+    }
+
+    char exe[1024]={0};
+    snprintf(exe,sizeof(exe),"/proc/%s/exe",argv[1]);
+    char cmdline[1024]={0};
+    snprintf(cmdline,sizeof(cmdline),"/proc/%s/cmdline",argv[1]);
+    char environ[1024]={0};
+    snprintf(environ,sizeof(environ),"/proc/%s/environ",argv[1]);
+    char cwdLink[1024]={0};
+    snprintf(cwdLink,sizeof(cwdLink),"/proc/%s/cwd",argv[1]);
+    
+    char currDir[1024];
+    int len=readlink(cwdLink,currDir,sizeof(currDir)-1);
+    if(len&lt;0) return 1;
+    currDir[len]='\0';
+
+    char args[1024]={0};
+    char env[1024]={0};
+
+    char *new_argv[256];
+    char *new_env[256];
+    int cmdLen = 0;
+    int envLen = 0;
+
+    int cmdFD=open(cmdline,O_RDONLY);
+    if(cmdFD!=-1){
+        cmdLen=read(cmdFD,args,sizeof(args));
+        if(cmdLen&lt;0) return 1;
+        close(cmdFD);
+    }
+
+    //Parsing del buffer args in new_argv
+    int arg_idx = 0;
+    char *p_arg = args;
+    while (p_arg &lt; args + cmdLen) {
+        new_argv[arg_idx] = p_arg;
+        arg_idx++;
+        p_arg += strlen(p_arg) + 1;
+    }
+    new_argv[arg_idx] = NULL;
+
+
+    int envFD=open(environ,O_RDONLY);
+    if(envFD!=-1){
+        envLen=read(envFD,env,sizeof(env));
+        if(envLen&lt;0) return 1;
+        close(envFD);
+    }
+
+    int env_idx = 0;
+    char *p_env = env;
+    while (p_env &lt; env + envLen) {
+        new_env[env_idx] = p_env;
+        env_idx++;
+        p_env += strlen(p_env) + 1;
+    }
+    new_env[env_idx] = NULL;
+
+
+    int sonPid=fork();
+    if(sonPid==0){ 
+        chdir(currDir);
+        
+        execve(exe, new_argv, new_env);
+    }
+    else{//padre
+        waitpid(sonPid,NULL,0);
+        printf("HO ESEGUITO: %s\n",exe);
+    }
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="symlist-py">
+            <h2>File: symlist.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+"""Scrivere un programma python o uno script bash che cerchi all'interno di un sottoalbero se ci sono
+link simbolici che indicano lo stesso file. (hint controllare se coincide il numero dell'i-node del file
+indicato)."""
+
+def main():
+    if(len(sys.argv)!=2):
+        print("Use: python symlist.py &lt;dir/&gt;")
+        exit(1)
+    
+
+    dict={} #inode-&gt;listOfLinks[]
+    '''
+        12 -&gt; link1, link3
+        42 -&gt; link2
+
+        link3 =&gt; FileConInode12
+
+    '''
+
+
+
+    for root,dirs,files in os.walk(sys.argv[1]):
+        for f in files:
+            fPath=os.path.join(root,f)
+            if(os.path.islink(fPath)):
+                #target=os.readlink(fPath)
+                targetStat=os.stat(fPath) #perché os.stat segue già i link
+                targetInode=targetStat.st_ino
+                if(targetInode not in dict.keys()):
+                    dict[targetInode]=[]
+                dict[targetInode].append(fPath)
+    
+    for inode in dict.keys():
+        print(f"{inode}: ")
+        for link in dict[inode]:
+            print(link)
+
+                
+
+
+
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-c">
+            <h2>File: test.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;unistd.h&gt;
+
+
+int main(int argc, char * argv[]){
+
+    printf("%d\n",getpid());
+
+    while(1){}
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-c">
+            <h2>File: test.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;unistd.h&gt;
+
+
+int main(int argc, char * argv[]){
+
+    printf("%d\n",getpid());
+
+    while(1){}
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test-py">
+            <h2>File: test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+import subprocess
+
+def main():
+    test_dir = "test_symlist_env"
+
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    # Creazione delle directory
+    os.makedirs(test_dir)
+    subdir = os.path.join(test_dir, "subdir")
+    os.makedirs(subdir)
+
+    # 1. Creazione dei file reali (i target)
+    file_a = os.path.join(test_dir, "file_A.txt")
+    file_b = os.path.join(test_dir, "file_B.txt")
+    
+    with open(file_a, "w") as f:
+        f.write("Target A\n")
+    with open(file_b, "w") as f:
+        f.write("Target B\n")
+
+    # 2. Creazione dei link simbolici che puntano a file_A (Stesso Inode)
+    os.symlink("file_A.txt", os.path.join(test_dir, "link_A1"))
+    os.symlink("file_A.txt", os.path.join(test_dir, "link_A2"))
+    os.symlink("../file_A.txt", os.path.join(subdir, "link_A3_ricorsivo"))
+
+    # 3. Creazione dei link simbolici che puntano a file_B (Altro Inode)
+    os.symlink("file_B.txt", os.path.join(test_dir, "link_B1"))
+
+    print(f"Ambiente di test creato in: {test_dir}\n")
+    print("--- INODE REALI DEI FILE TARGET ---")
+    # Mostriamo gli inode reali per controllo visivo
+    print(f"File A Inode: {os.stat(file_a).st_ino}")
+    print(f"File B Inode: {os.stat(file_b).st_ino}\n")
+    
+    print("--- STRUTTURA GENERATA (ls -lR) ---")
+    subprocess.run(["ls", "-lR", test_dir])
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

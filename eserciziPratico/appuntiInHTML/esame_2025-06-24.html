@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2025-06-24</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2025-06-24</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#addComment-py">addComment.py</a></li>
+                <li><a href="#main-c">main.c</a></li>
+                <li><a href="#script-py">script.py</a></li>
+                <li><a href="#semrecv-c">semrecv.c</a></li>
+                <li><a href="#semsend-c">semsend.c</a></li>
+                <li><a href="#testCreator-py">testCreator.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="addComment-py">
+            <h2>File: addComment.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+
+"""Scrivere un programma python o uno script bash che aggiunga
+alcune righe di testo all'inizio di tutti i file C, bash, python presenti nella directory specificata
+(riconoscibili dal suffisso .c .sh o .py)
+Il testo deve comparire come commento coerentemente con la sintassi del linguaggio:
+• per i file sorgente C: /* .... */
+• per gli script bash: linee con prefisso # (dopo se esiste la prima riga #!)
+• per i file sorgente python: ''' .... '''
+"""
+
+
+#idea: copio il conenuto del file, creo un file identico in cui faccio append 
+# del comment e poi reinserisco il contenuto
+def main():
+
+    if(len(sys.argv)!=3):
+        print("Use: python addComment.py &lt;multi_line_string&gt; &lt;dir/&gt;")
+        exit(1)
+
+    content=sys.argv[1]
+    
+    for root,dirs,files in os.walk(sys.argv[2]):
+            dirs.clear()
+            for f in files:
+                f=os.path.join(root, f)
+
+                if(f.endswith(".c")):
+                    comment="/* \n" + content +"\n */\n"
+                    with open(f,mode="r") as file:
+                       text=file.read()
+                    with open(f,mode="w") as file:
+                        file.write(comment)
+                        file.write(text)
+
+
+                elif(f.endswith(".py")):
+                    comment=" ''' \n" + content +"\n '''\n "
+                    with open(f,mode="r") as file:
+                       text=file.read()
+                    with open(f,mode="w") as file:
+                        file.write(comment)
+                        file.write(text)
+                    
+                elif(f.endswith(".sh")):
+                    #bash script, commenti con # dopo riga 1 che contiene metodo di compilazione
+                    comment="#" + content.replace("\n","\n#") + "\n"
+                    with open(f,mode="r") as file:
+                       text=file.read()
+                    
+                    firstLine=""
+                    if text.startswith("#!"):
+                        for ch in text:
+                            if(ch!="\n"):
+                                firstLine+=ch
+                            else: 
+                                break
+                    with open(f,mode="w") as file:
+                        if(len(firstLine)!=0):
+                            file.write(firstLine + "\n")
+                        file.write(comment)
+                        file.write(text)
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="main-c">
+            <h2>File: main.c</h2>
+            <pre><code class="language-c">
+/* 
+le
+le le
+!
+ */
+/* 
+ciao bello, \n come stai\n ?
+ */
+#include &lt;stdio.h&gt;
+
+int main() {
+    printf("Hello World\n");
+    return 0;
+}
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="script-py">
+            <h2>File: script.py</h2>
+            <pre><code class="language-python">
+ ''' 
+le
+le le
+!
+ '''
+  ''' 
+ciao bello, \n come stai\n ?
+ '''
+ def main():
+    print("Hello Python")
+
+if __name__ == '__main__':
+    main()
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="semrecv-c">
+            <h2>File: semrecv.c</h2>
+            <pre><code class="language-c">
+#define _POSIX_C_SOURCE 199309L
+
+#include&lt;stdio.h&gt;
+#include&lt;sys/types.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include&lt;unistd.h&gt;
+#include &lt;ucontext.h&gt;
+
+/*crivere due programmi C: semsend e semrecv.
+Il programma semrecv stampa il proprio pid e si pone in attesa. Il programma semsend ha due
+parametri: il pid del processo semrecv e una stringa.
+La stringa passata come ultimo parametro a semsend deve essere trasferita a semrecv e da
+quest'ultimo stampata.
+Ogni carattere della stringa (incluso il terminatore) deve essere spedito bit a bit usando i segnali
+SIGUSR1 e SIGUSR2.*/
+
+int cont=0;
+char currChar=0;
+
+void handler(int sig, siginfo_t *info, void* ucontext){
+    currChar=currChar&lt;&lt;1;
+    if(sig==SIGUSR2) currChar = currChar | 1 ; //Se ho inviato un 1
+    cont++;
+
+    if(cont==8) {
+        //printf("%c", currChar);
+        write(STDOUT_FILENO,&amp;currChar,1);
+        cont=0;
+        if(currChar=='\0')  write(STDOUT_FILENO,"\n",1);  //printf("\n");
+        currChar=0;
+    }
+
+
+    pid_t sender=info-&gt;si_pid;
+    kill(sender, SIGUSR1); //invio Ack
+}
+
+
+int main(int argc, char * argv[]){
+
+    pid_t myPid=getpid();
+    printf("%d\n", myPid);
+
+    struct sigaction sa;
+    sigemptyset(&amp;sa.sa_mask);
+    sa.sa_flags=SA_SIGINFO;
+    sa.sa_sigaction=handler;
+
+    sigaction(SIGUSR1,&amp;sa,NULL);
+    sigaction(SIGUSR2,&amp;sa,NULL);
+
+    while(1){
+        pause();
+    }
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="semsend-c">
+            <h2>File: semsend.c</h2>
+            <pre><code class="language-c">
+#define _POSIX_C_SOURCE 199309L
+
+#include&lt;stdio.h&gt;
+#include&lt;sys/types.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include&lt;unistd.h&gt;
+
+/*crivere due programmi C: semsend e semrecv.
+Il programma semrecv stampa il proprio pid e si pone in attesa. Il programma semsend ha due
+parametri: il pid del processo semrecv e una stringa.
+La stringa passata come ultimo parametro a semsend deve essere trasferita a semrecv e da
+quest'ultimo stampata.
+Ogni carattere della stringa (incluso il terminatore) deve essere spedito bit a bit usando i segnali
+SIGUSR1 e SIGUSR2.*/
+void useless(){}
+
+int main(int argc, char * argv[]){
+
+    if(argc!=3){
+        printf("Use ./semsend &lt;pid&gt; &lt;string&gt;");
+        return 1;
+    }
+
+    pid_t dest=(pid_t) atoi(argv[1]);
+    char msg[1024]={0};
+    snprintf(msg, sizeof(msg), "%s", argv[2]);
+    int len=strlen(msg);
+
+    struct sigaction sa;
+    sigemptyset(&amp;sa.sa_mask);
+    sa.sa_flags=0;
+    sa.sa_handler=useless;
+    sigaction(SIGUSR1, &amp;sa, NULL);
+
+
+    for(int i=0;i&lt;=len;i++){    //&lt;= perché inoltro anche il terminatore
+        for(int j=7; j&gt;=0; j--){ //invio bit dal più significativo al meno
+            int bit=(msg[i]&gt;&gt;j) &amp; 1;
+            if(bit==0) kill(dest, SIGUSR1);
+            else kill(dest, SIGUSR2);
+
+            pause();
+        }
+        
+    }
+
+    
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="testCreator-py">
+            <h2>File: testCreator.py</h2>
+            <pre><code class="language-python">
+import os
+
+def main():
+    test_dir = "test_directory"
+    
+    # Crea la directory se non esiste
+    if not os.path.exists(test_dir):
+        os.makedirs(test_dir)
+        
+    # Dizionario con nomi dei file e loro contenuto iniziale
+    files_data = {
+        "main.c": "#include &lt;stdio.h&gt;\n\nint main() {\n    printf(\"Hello World\\n\");\n    return 0;\n}\n",
+        "script.py": "def main():\n    print(\"Hello Python\")\n\nif __name__ == '__main__':\n    main()\n",
+        "script_shebang.sh": "#!/bin/bash\n\necho \"Hello Bash\"\nls -l\n",
+        "script_no_shebang.sh": "echo \"No shebang here\"\npwd\n",
+        "ignore_me.txt": "Questo file non deve essere modificato dal tuo script.\n"
+    }
+    
+    # Creazione fisica dei file
+    for filename, content in files_data.items():
+        filepath = os.path.join(test_dir, filename)
+        with open(filepath, mode="w") as f:
+            f.write(content)
+            
+    print("Cartella di test creata con successo: " + test_dir)
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

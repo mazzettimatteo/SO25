@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2022-07-22</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2022-07-22</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#TEST-py">TEST.py</a></li>
+                <li><a href="#execAllButELF-py">execAllButELF.py</a></li>
+                <li><a href="#tree-c">tree.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="TEST-py">
+            <h2>File: TEST.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    test_dir = "test_exec_env"
+
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+
+    os.makedirs(test_dir)
+
+    # 1. Finto eseguibile ELF
+    # Il tuo script deve ignorarlo grazie al controllo isElf()
+    elf_path = os.path.join(test_dir, "fake_elf.bin")
+    with open(elf_path, "wb") as f:
+        f.write(b'\x7fELF' + b'\x00\x01\x02\x03')
+
+    # 2. Script Bash valido con shebang
+    # Il tuo script deve identificarlo ed eseguirlo stampando il messaggio a schermo
+    script_path = os.path.join(test_dir, "test_script.sh")
+    with open(script_path, "w") as f:
+        f.write("#!/bin/bash\n")
+        f.write("echo \"---&gt; SUCCESSO: test_script.sh e' stato eseguito!\"\n")
+
+    # 3. File di testo generico
+    # Il tuo script non deve eseguirlo perché non inizia con "#!"
+    txt_path = os.path.join(test_dir, "documento.txt")
+    with open(txt_path, "w") as f:
+        f.write("Questo e' un semplice file di testo.\n")
+        f.write("Non contiene shebang e non e' un eseguibile.\n")
+
+    print(f"Ambiente di test creato con successo in: {test_dir}")
+    print("Contenuto generato:")
+    print(" - fake_elf.bin   (Da saltare: e' un ELF)")
+    print(" - test_script.sh (Da eseguire: ha lo shebang)")
+    print(" - documento.txt  (Da saltare: non ha lo shebang)")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="execAllButELF-py">
+            <h2>File: execAllButELF.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+import subprocess
+
+"""l programma python o lo script bash deve eseguire uno dopo l'altro tutti gli script presenti nella
+directory passata come parametro (o la current directory se manca il parametro) ma non gli eseguibili
+binari di tipo ELF."""
+
+def isElf(filePath):
+    with open(filePath,"rb") as file:
+        content=file.read(4)
+        if(content==(b'\x7fELF')):
+            return 1
+        else:
+            return 0
+
+
+def main():
+    argc=len(sys.argv)
+    if(argc==1):
+        dir="."
+    elif(argc==2):
+        dir=sys.argv[1]
+    else:
+        print("Use: python execAllButElf.py [dir/]")
+        exit(1)
+    
+    for root,dirs,files in os.walk(dir):
+        dirs.clear() #dice nella dir, non nel sottoalbero
+        for f in files:
+            fPath=os.path.join(root,f)
+            if(not isElf(fPath)):
+                with open(fPath,"r") as file:
+                    if(file.read(2)=="#!"):
+                        subprocess.run(["bash",fPath])
+
+
+'''Nota: in realtà il controllo isElf non serve se poi controllo se il file inizia con lo shebang #!, 
+però andrebbe fatto in maniera binaria, così da non rischiare di aprire i file ELF inn un formato sbagliato
+prima di fare il controllo: si possono sostituire da linea 32 a 35 come segue:
+
+with open(fPath, "rb") as file:
+    if(file.read(2)== b'#!' ):
+        subprocess.run(["bash",fPath])
+
+
+'''
+
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tree-c">
+            <h2>File: tree.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;sys/stat.h&gt;
+
+/*l programma da realizzare si chiama tree mostra un sottoalbero del file system.
+es data una directory A che contiene una sottodirectory B e un file C; B contiene i file E F e G:
+tree A dovrebbe produrre:
+B
+    E
+    F
+    G
+C
+*/
+
+void recExplore(char * dir, int depth){
+
+    DIR * currDir=opendir(dir);
+    struct dirent *dp;
+
+    while((dp=readdir(currDir))!=NULL){
+        if(strcmp(dp-&gt;d_name,".")==0 || strcmp(dp-&gt;d_name,"..")==0) continue;
+        for(int i=0;i&lt;depth;i++){
+            printf(" ");
+            printf(" ");
+            printf(" ");
+        }
+        printf("%s\n",dp-&gt;d_name);
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s",dir,dp-&gt;d_name);
+
+        struct stat dpStat;
+        stat(dpPath,&amp;dpStat);
+
+        if(S_ISDIR(dpStat.st_mode)) {
+            
+            recExplore(dpPath,depth+1);
+        }
+
+    }
+    closedir(currDir);
+
+}
+
+
+
+int main(int argc, char * argv[]){
+
+    printf("%s\n",argv[1]);
+    recExplore(argv[1],1);
+
+    return 0;
+}
+
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

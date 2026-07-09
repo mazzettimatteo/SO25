@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2026-01-12</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2026-01-12</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#modifcmp-c">modifcmp.c</a></li>
+                <li><a href="#modifeq-c">modifeq.c</a></li>
+                <li><a href="#no8cat-py">no8cat.py</a></li>
+                <li><a href="#test_modifcmp-py">test_modifcmp.py</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="modifcmp-c">
+            <h2>File: modifcmp.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+
+/*Scrivere il programma C modifcmp che confronta il tempo dell’ultima modifica fra file
+modifcmp ammette molteplici modalità di funzionamento,
+a) se viene chiamato con il pathname di un file come solo argomento elenca i pathname di tutti i
+file nel sottoalbero della directory corrente aggiornati più recentemente rispetto al file passato
+come parametro (es: modifcmp myfile)
+b) se viene chiamato con i pathname di due file come parametri stampa il pathname del
+secondo file se è stato aggiornato più recentemente del primo (es: modifcmp myfile1
+tmp/myfile2)
+c) se viene chiamato con un pathname di un file e uno di una directory elenca il pathname di
+tutti i file nel sottoalbero che ha come radice il secondo pathname aggiornati più
+recentemente rispetto al file passato come primo parametro (es: modifcmp myfile mydir)*/
+
+void recExplore(char * startingDir, time_t baseTime){
+    DIR *currDir=opendir(startingDir);
+    struct dirent *dp;
+    
+
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char fullPath[1000]={0};
+
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", startingDir, dp-&gt;d_name);
+
+
+        struct stat buf;
+        stat(fullPath, &amp;buf);
+
+        if(S_ISDIR(buf.st_mode)) recExplore(fullPath, baseTime);
+        else if(S_ISREG(buf.st_mode)){
+            if(buf.st_mtime - baseTime &gt;0) printf("%s\n", fullPath);
+        }
+
+        
+    }
+
+    closedir(currDir);
+}
+
+
+
+int main (int argc, char * argv[]){
+
+    if(argc==2){ //(a)
+        struct stat statbuf;
+        stat(argv[1], &amp;statbuf);
+
+        time_t baseTime=statbuf.st_mtime;
+
+        recExplore(".", baseTime);
+    }
+    else if(argc==3){
+        struct stat arg1;
+        stat(argv[1], &amp;arg1);
+        struct stat arg2;
+        int retVal=stat(argv[2], &amp;arg2);
+        if(S_ISDIR(arg2.st_mode)){ //(c)
+            time_t baseTime=arg1.st_mtime;
+            recExplore(argv[2], baseTime);
+        }
+        else if(S_ISREG(arg2.st_mode)){
+            time_t baseTime=arg1.st_mtime;
+            time_t time2=arg2.st_mtime;
+            if (time2-baseTime&gt;0) printf("%s", argv[2]);
+
+        }
+
+    }
+
+    
+
+    return 0;
+}
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="modifeq-c">
+            <h2>File: modifeq.c</h2>
+            <pre><code class="language-c">
+#define _POSIX_C_SOURCE 200809L
+
+#include&lt;stdio.h&gt;
+#include&lt;sys/stat.h&gt;
+#include&lt;sys/types.h&gt;
+#include&lt;dirent.h&gt;
+#include&lt;string.h&gt;
+#include&lt;unistd.h&gt;
+#include&lt;fcntl.h&gt;
+#include&lt;time.h&gt;
+
+/*Scrivere il programma C modifcmp che confronta il tempo dell’ultima modifica fra file
+modifcmp ammette molteplici modalità di funzionamento,
+a) se viene chiamato con il pathname di un file come solo argomento elenca i pathname di tutti i
+file nel sottoalbero della directory corrente aggiornati più recentemente rispetto al file passato
+come parametro (es: modifcmp myfile)
+b) se viene chiamato con i pathname di due file come parametri stampa il pathname del
+secondo file se è stato aggiornato più recentemente del primo (es: modifcmp myfile1
+tmp/myfile2)
+c) se viene chiamato con un pathname di un file e uno di una directory elenca il pathname di
+tutti i file nel sottoalbero che ha come radice il secondo pathname aggiornati più
+recentemente rispetto al file passato come primo parametro (es: modifcmp myfile mydir)*/
+
+/*2. Scrivere il comando modif= che opera come modifcmp ma invece di controllare i file modifcati più di
+recente, elenca i pathname dei file che hanno il tempo di modifica uguale a quella del file indicato nel
+primo parametro che non sia un link fisico o logico di tale file. Occorre mostrare anche come
+costruire un esempio per testare il programma. */
+
+void recExplore(char * startingDir, time_t baseTime, ino_t targetNode){
+    DIR *currDir=opendir(startingDir);
+    struct dirent *dp;
+    
+
+    while((dp=readdir(currDir))!=NULL){
+
+        
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char fullPath[1000]={0};
+
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", startingDir, dp-&gt;d_name);
+
+
+        struct stat buf;
+        lstat(fullPath, &amp;buf);
+
+        ino_t currNode =buf.st_ino;
+        if(S_ISLNK(buf.st_mode) || currNode==targetNode) continue;
+        else if(S_ISDIR(buf.st_mode)) recExplore(fullPath, baseTime, targetNode); 
+        else if(S_ISREG(buf.st_mode)){
+            if(buf.st_mtime - baseTime ==0) printf("%s\n", fullPath);
+        }
+
+        
+    }
+
+    closedir(currDir);
+}
+
+void buildTestDir(){
+    if(mkdir("./testDir/", S_IRWXU)==0){
+        int f1=creat("./testDir/target.txt", S_IRWXU);
+        close(f1);
+        int f2=creat("./testDir/clone.txt", S_IRWXU);
+        close(f2);
+        symlink("./testDir/target.txt", "./testDir/symlink.txt");
+        link("./testDir/target.txt", "./testDir/hardlink.txt");
+        int f4=creat("./testDir/different.txt", S_IRWXU);
+        close(f4);
+
+        //Creo nuovo file con stessi metadati(mtime compreso) di target.txt
+
+        struct stat targetbuf;
+        stat("./testDir/target.txt", &amp;targetbuf);
+
+        struct timespec times[2];
+        times[0]=targetbuf.st_atim;
+        times[1]=targetbuf.st_mtim;
+        utimensat(AT_FDCWD, "./testDir/clone.txt", times, 0);
+
+        struct timespec differentTimes[2];
+        differentTimes[0]=times[0];
+        differentTimes[1]=times[1];
+        differentTimes[1].tv_sec-=10;
+        utimensat(AT_FDCWD, "./testDir/different.txt", differentTimes, 0);
+
+
+    }
+
+}
+
+
+int main (int argc, char * argv[]){
+
+
+    buildTestDir();
+
+
+
+    if(argc==2){ //(a)
+        struct stat statbuf;
+        lstat(argv[1], &amp;statbuf);
+
+        time_t baseTime=statbuf.st_mtime;
+        ino_t targetNode=statbuf.st_ino;
+
+
+        recExplore(".", baseTime, targetNode);
+    }
+    else if(argc==3){
+        struct stat arg1;
+        lstat(argv[1], &amp;arg1);
+        struct stat arg2;
+        lstat(argv[2], &amp;arg2);
+        if(S_ISDIR(arg2.st_mode)){ //(c)
+            time_t baseTime=arg1.st_mtime;
+            ino_t targetNode=arg1.st_ino;
+            recExplore(argv[2], baseTime, targetNode);
+        }
+        else if(S_ISREG(arg2.st_mode)){
+            time_t baseTime=arg1.st_mtime;
+            ino_t targetNode1=arg1.st_ino;
+            time_t time2=arg2.st_mtime;
+            ino_t targetNode2=arg2.st_ino;
+            if (time2-baseTime==0 &amp;&amp; targetNode1 != targetNode2) printf("%s", argv[2]);
+
+        }
+
+    }
+
+    
+
+    return 0;
+}
+
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="no8cat-py">
+            <h2>File: no8cat.py</h2>
+            <pre><code class="language-python">
+import sys
+
+#Scrivere un programma python o uno script bash che copi un file di testo UTF-8. Nella copia i caratteri
+#non ASCII devono essere sostituiti con "?".
+#Es: no8cat filein fileout
+#se filein contiene: "cioè I Y💖"
+#fileout dovrà essere: "cio? I?Y"
+
+def main():
+    if(len(sys.argv) != 2):
+        print("Uso: python no8cat.py \"sting with weird chars(non UTF-8) è💖ç§\" ")
+        sys.exit(1)
+    str=sys.argv[1]
+    
+    for char in str:
+        if char.isascii():
+            print(char, end='')
+        else:
+            print('?', end='')
+    print("\n")
+
+        
+
+
+
+
+if __name__ == "__main__" :
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="test_modifcmp-py">
+            <h2>File: test_modifcmp.py</h2>
+            <pre><code class="language-python">
+import os
+import time
+import subprocess
+import shutil
+
+# Configurazione
+WORKSPACE = "test_workspace"
+C_SOURCE = "modifcmp.c"
+EXEC_NAME = "modifcmp"
+EXEC_PATH = os.path.join(".", EXEC_NAME)
+
+def setup_env():
+    """Crea una directory isolata con file vecchi e nuovi rispetto a un file di riferimento."""
+    if os.path.exists(WORKSPACE):
+        shutil.rmtree(WORKSPACE)
+    os.makedirs(os.path.join(WORKSPACE, "subdir"))
+
+    now = time.time()
+    old_time = now - 86400  # -1 giorno
+    new_time = now + 86400  # +1 giorno
+
+    # Mappa dei file da creare e relativo timestamp
+    files = {
+        "ref.txt": now,
+        "old.txt": old_time,
+        "new.txt": new_time,
+        os.path.join("subdir", "old_sub.txt"): old_time,
+        os.path.join("subdir", "new_sub.txt"): new_time
+    }
+
+    for fname, mtime in files.items():
+        path = os.path.join(WORKSPACE, fname)
+        with open(path, "w") as f:
+            f.write("dati di test")
+        os.utime(path, (mtime, mtime))
+
+def check_output(output_lines, expected_substrings):
+    """Verifica che l'output contenga esattamente le stringhe attese."""
+    if not output_lines and not expected_substrings:
+        return True
+    
+    match_count = 0
+    for expected in expected_substrings:
+        if any(expected in line for line in output_lines):
+            match_count += 1
+            
+    return match_count == len(expected_substrings) and len(output_lines) == len(expected_substrings)
+
+def run_test(name, cmd, expected_substrings, cwd=None):
+    print(f"--- {name} ---")
+    print(f"Comando: {' '.join(cmd)}")
+    
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    
+    if result.returncode != 0:
+        print(f"Errore di esecuzione (Exit {result.returncode}):\n{result.stderr}")
+        return
+        
+    output_lines = [line.strip() for line in result.stdout.split('\n') if line.strip()]
+    
+    if check_output(output_lines, expected_substrings):
+        print("Risultato: PASSATO\n")
+    else:
+        print("Risultato: FALLITO")
+        print(f"Atteso (substringhe): {expected_substrings}")
+        print(f"Ottenuto: {output_lines}\n")
+
+def main():
+    if not os.path.exists(C_SOURCE):
+        print(f"Errore: Il file sorgente '{C_SOURCE}' non si trova nella directory corrente.")
+        return
+
+    print("1. Compilazione del file C...")
+    compile_result = subprocess.run(["gcc", C_SOURCE, "-o", EXEC_NAME], capture_output=True, text=True)
+    if compile_result.returncode != 0:
+        print(f"Errore di compilazione:\n{compile_result.stderr}")
+        return
+
+    print("2. Creazione dell'ambiente di test temporale...")
+    setup_env()
+
+    print("3. Esecuzione dei test...\n")
+
+    # CASO 1: Un solo argomento
+    # Spostiamo il processo nel workspace affinché la directory corrente "." coincida con i file di test
+    run_test(
+        "Caso 1 (1 argomento - Cerca nel sottoalbero corrente)",
+        [f"../{EXEC_NAME}", "ref.txt"],
+        ["new.txt", "new_sub.txt"], 
+        cwd=WORKSPACE
+    )
+
+    # CASO 2: Due argomenti (File e File)
+    run_test(
+        "Caso 2A (2 argomenti - Il secondo file è più recente)",
+        [EXEC_PATH, os.path.join(WORKSPACE, "ref.txt"), os.path.join(WORKSPACE, "new.txt")],
+        ["new.txt"]
+    )
+    
+    run_test(
+        "Caso 2B (2 argomenti - Il secondo file è più vecchio, nessun output atteso)",
+        [EXEC_PATH, os.path.join(WORKSPACE, "ref.txt"), os.path.join(WORKSPACE, "old.txt")],
+        []
+    )
+
+    # CASO 3: Due argomenti (File e Directory)
+    run_test(
+        "Caso 3 (2 argomenti - Cerca nel sottoalbero della directory target)",
+        [EXEC_PATH, os.path.join(WORKSPACE, "ref.txt"), os.path.join(WORKSPACE, "subdir")],
+        ["new_sub.txt"]
+    )
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

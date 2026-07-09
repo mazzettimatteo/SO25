@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2024-07-23</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2024-07-23</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#Test-py">Test.py</a></li>
+                <li><a href="#maketest-py">maketest.py</a></li>
+                <li><a href="#mvclone-c">mvclone.c</a></li>
+                <li><a href="#samesha-py">samesha.py</a></li>
+                <li><a href="#tests-py">tests.py</a></li>
+                <li><a href="#undomvclone-c">undomvclone.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="Test-py">
+            <h2>File: Test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_undomvclone_env"
+    clone_dir = os.path.join(base_dir, "...")
+    
+    # Pulizia preventiva
+    if os.path.exists(base_dir):
+        shutil.rmtree(base_dir)
+        
+    # Ricreiamo la struttura post-mvclone
+    os.makedirs(clone_dir)
+
+    # 1. CASO VALIDO: File reale in '...' e symlink relativo nella base
+    real_file1 = os.path.join(clone_dir, "documento.txt")
+    with open(real_file1, "w") as f:
+        f.write("Contenuto reale del documento 1.\n")
+    
+    symlink1 = os.path.join(base_dir, "documento.txt")
+    os.symlink(os.path.join("...", "documento.txt"), symlink1)
+
+    # 2. CASO VALIDO 2: Un altro file
+    real_file2 = os.path.join(clone_dir, "immagine.png")
+    with open(real_file2, "w") as f:
+        f.write("Contenuto reale immagine.\n")
+        
+    symlink2 = os.path.join(base_dir, "immagine.png")
+    os.symlink(os.path.join("...", "immagine.png"), symlink2)
+
+    # 3. ESCA 1: Un file regolare appena creato nella dir principale (NON deve essere toccato)
+    esca_file = os.path.join(base_dir, "file_nuovo.txt")
+    with open(esca_file, "w") as f:
+        f.write("Questo file non c'entra con mvclone.\n")
+
+    # 4. ESCA 2: Un symlink che punta da un'altra parte (NON deve essere toccato)
+    esca_symlink = os.path.join(base_dir, "link_falso")
+    os.symlink("file_nuovo.txt", esca_symlink)
+
+    print(f"Ambiente di test generato con successo: {base_dir}")
+    print("\nStruttura attuale:")
+    print(" test_undomvclone_env/")
+    print(" ├── .../                 (contiene i file reali)")
+    print(" │   ├── documento.txt")
+    print(" │   └── immagine.png")
+    print(" ├── documento.txt        (symlink -&gt; .../documento.txt)")
+    print(" ├── immagine.png         (symlink -&gt; .../immagine.png)")
+    print(" ├── file_nuovo.txt       (esca - file regolare)")
+    print(" └── link_falso           (esca - symlink -&gt; file_nuovo.txt)")
+
+    print("\nComando da lanciare per testare:")
+    print(f"./undomvclone {base_dir}")
+    
+    print("\n--- RISULTATO ATTESO ---")
+    print("1. I symlink 'documento.txt' e 'immagine.png' devono essere sostituiti dai file reali.")
+    print("2. La cartella '...' dovrebbe rimanere vuota (i file sono stati spostati).")
+    print("3. 'file_nuovo.txt' e 'link_falso' devono rimanere intatti.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="maketest-py">
+            <h2>File: maketest.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    dir1 = "test_dir1"
+    dir2 = "test_dir2"
+
+    if os.path.exists(dir1): shutil.rmtree(dir1)
+    if os.path.exists(dir2): shutil.rmtree(dir2)
+
+    os.makedirs(dir1)
+    os.makedirs(dir2)
+
+    # Caso 1: Stesso file in entrambe le directory (DA CANCELLARE)
+    with open(os.path.join(dir1, "comune_A.txt"), "w") as f: f.write("Contenuto A")
+    with open(os.path.join(dir2, "comune_B.txt"), "w") as f: f.write("Contenuto A")
+
+    # Caso 2: Più copie in dir1 e una in dir2 (DA CANCELLARE TUTTI E TRE)
+    with open(os.path.join(dir1, "multiplo_1.txt"), "w") as f: f.write("Contenuto C")
+    with open(os.path.join(dir1, "multiplo_2.txt"), "w") as f: f.write("Contenuto C")
+    with open(os.path.join(dir2, "multiplo_3.txt"), "w") as f: f.write("Contenuto C")
+
+    # Caso 3: Copie multiple ma solo in dir1 (DA NON CANCELLARE)
+    with open(os.path.join(dir1, "solo_dir1_a.txt"), "w") as f: f.write("Contenuto D")
+    with open(os.path.join(dir1, "solo_dir1_b.txt"), "w") as f: f.write("Contenuto D")
+
+    # Caso 4: File unici e isolati (DA NON CANCELLARE)
+    with open(os.path.join(dir1, "unico_dir1.txt"), "w") as f: f.write("Contenuto E")
+    with open(os.path.join(dir2, "unico_dir2.txt"), "w") as f: f.write("Contenuto F")
+
+    # Caso 5: Sottocartelle con file uguali (DA IGNORARE, non devono essere cancellati)
+    sub1 = os.path.join(dir1, "sub")
+    sub2 = os.path.join(dir2, "sub")
+    os.makedirs(sub1)
+    os.makedirs(sub2)
+    with open(os.path.join(sub1, "sub_comune.txt"), "w") as f: f.write("Contenuto G")
+    with open(os.path.join(sub2, "sub_comune.txt"), "w") as f: f.write("Contenuto G")
+
+    print("Ambiente di test creato.")
+    print("Comando: python samesha.py test_dir1 test_dir2\n")
+    
+    print("RISULTATI ATTESI DOPO L'ESECUZIONE:")
+    print("File RIMOSSI (hash in comune):")
+    print("- comune_A.txt, comune_B.txt")
+    print("- multiplo_1.txt, multiplo_2.txt, multiplo_3.txt")
+    print("\nFile CONSERVATI:")
+    print("- solo_dir1_a.txt, solo_dir1_b.txt (stesso hash, ma mancano in dir2)")
+    print("- unico_dir1.txt, unico_dir2.txt (hash unici)")
+    print("- i file nella sottocartella 'sub' (directory ignorate)")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="mvclone-c">
+            <h2>File: mvclone.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+
+/*Scrivere un programma che crei nella directory passata come arg (se non esiste già) una sottodirectory di
+nome ... (tre punti).
+Tutti i file (regolari) presenti nella directory devono essere spostati nella sottodirectory ... (tre punti) e
+ogni file deve essere sostituito nella dir passata come arg con un link simbolico (relativo, non assoluto) alla
+nuova locazione. Usare la system call rename per fare la sostituzione in modo atomico (in nessun
+istante il file deve risultare inesistente)*/
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use ./undomvclone &lt;dir/&gt;");
+        return 1;
+    }
+
+    char startingDir[1024]={0};
+    realpath(argv[1], startingDir);
+
+    char cloneDir[1024]={0};
+    snprintf(cloneDir, sizeof(cloneDir), "%s/...", startingDir);
+    mkdir(cloneDir,S_IRWXU);
+
+    DIR * _startingDir=opendir(startingDir);
+    struct dirent *dp;
+
+    while((dp=readdir(_startingDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name,".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s",startingDir,dp-&gt;d_name);
+
+        struct stat dpStat;
+        lstat(dpPath, &amp;dpStat);
+
+        if(S_ISREG(dpStat.st_mode)){
+
+            char dpNewPath[1024]={0};
+            snprintf(dpNewPath,sizeof(dpNewPath),"%s/%s",cloneDir,dp-&gt;d_name);
+            char dpNewRelPath[1024]={0};
+            snprintf(dpNewRelPath,sizeof(dpNewRelPath),".../%s",dp-&gt;d_name); //Perché la consegna vuole che la dir passata sia path relativo
+
+            link(dpPath,dpNewRelPath); //Così ho hardlink sia nella dir corrente che nella nuova
+
+            char tempPath[1024]={0};
+            snprintf(tempPath, sizeof(tempPath), "%s.temp",dpPath); 
+
+            symlink(dpNewPath, tempPath); //Creo link del nuovo file nella dir attuale con nome temp
+
+            rename(tempPath, dpPath); //sovrascrivo tempPath con nome vero
+
+        }
+        
+    }
+    closedir(_startingDir);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="samesha-py">
+            <h2>File: samesha.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+import hashlib
+
+"""Scrivere uno script che prende in input da linea di comando il nome di due directory ed elimina (da
+entrambe le directory) tutti i file che hanno la stessa hash sha1. Più precisamente se c'è un file nella
+prima directory e uno nella seconda che hanno la stessa hash sha1 tutti i file che hanno la stessa hash
+sha1 presenti nelle due directory vanno cancellati.
+(Se esistono file con la stessa hash sha1 ma solo in una delle due directory, non sono da cancellare.)"""
+
+
+def main():
+    if(len(sys.argv)!=3):
+        print("Use: python samesha.py &lt;dir1/&gt; &lt;dir2/&gt;")
+        exit(1)
+
+    dir1=os.path.realpath(sys.argv[1])
+    dir2=os.path.realpath(sys.argv[2])
+
+    result1={} #dict: filePath -&gt; sha
+
+    for root, dirs, files in os.walk(dir1):
+        dirs.clear() #dice nella directory, non nell'albero che ha come radice la directory
+        for f in files:            
+            filePath=os.path.join(root,f)
+            filePath=os.path.abspath(filePath)
+
+            with open(filePath, 'rb') as file: #Uso "with open as file" invece che file=open così poi si chiude da solo il file 
+                fileContent=file.read()
+                fileHash=(hashlib.sha1(fileContent)).hexdigest()
+                if(fileHash not in result1.keys()):
+                    result1[fileHash]=[]
+                result1[fileHash].append(filePath)
+
+    toRemove=set()
+
+    for root, dirs, files in os.walk(dir2):
+        dirs.clear()
+        for f in files:
+            filePath=os.path.join(root,f)
+            filePath=os.path.abspath(filePath)
+
+            with open(filePath, 'rb') as file: 
+                fileContent=file.read()
+                fileHash=(hashlib.sha1(fileContent)).hexdigest()
+                if(fileHash in result1.keys()):
+                    toRemove.update(result1[fileHash]) #update è l'operazione di add su tutti gli elem di una list
+                    toRemove.add(filePath)
+    
+    for f in toRemove:
+        print("Removing " + f)
+        os.remove(f)
+
+
+
+if __name__ == "__main__":
+    main()
+
+# Al posto di usare libreria hashlib posso importare il modulo subprocess
+# e invocare subprocess.run([sha1sum, filePath], capture_output=True, text=True)
+# sha1sum di Linux restituisce una stringa strutturata in questo modo: &lt;hash_esadecimale&gt;  &lt;percorso_del_file&gt;\n
+# quindi per avere solo l'hash uso il metodo .stdout per ottenere il val di ritorno di subprocess.run
+# e poi splittarla in corrispondenza degli spazi con .split() in una lista e prendere l'elemento [0] 
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="tests-py">
+            <h2>File: tests.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_mvclone_env"
+    
+    # Pulizia preventiva dell'ambiente
+    if os.path.exists(base_dir):
+        shutil.rmtree(base_dir)
+        
+    os.makedirs(base_dir)
+
+    # 1. Creazione di file regolari
+    file1 = os.path.join(base_dir, "documento.txt")
+    with open(file1, "w") as f:
+        f.write("Questo è il file originale numero 1.\n")
+
+    file2 = os.path.join(base_dir, "immagine.png")
+    with open(file2, "w") as f:
+        f.write("Finto contenuto binario di una immagine.\n")
+
+    # 2. Creazione di una directory (il programma C NON deve toccarla)
+    os.makedirs(os.path.join(base_dir, "cartella_da_ignorare"))
+
+    print(f"Ambiente di test generato con successo: {base_dir}")
+    print("\nContenuto iniziale:")
+    for item in os.listdir(base_dir):
+        print(f" - {item}")
+
+    print("\nComando da lanciare:")
+    print(f"./mvclone {base_dir}")
+    
+    print("\n--- RISULTATO ATTESO DOPO L'ESECUZIONE ---")
+    print("1. Deve esistere la cartella '...'.")
+    print("2. I file 'documento.txt' e 'immagine.png' originali devono essere DIVENTATI LINK SIMBOLICI.")
+    print("3. I link devono puntare a '.../documento.txt' (link RELATIVO).")
+    print("4. 'cartella_da_ignorare' deve essere rimasta intatta e non deve essere un link.")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="undomvclone-c">
+            <h2>File: undomvclone.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include&lt;string.h&gt;
+#include &lt;limits.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+
+/*Scrivere un programma che crei nella directory passata come arg (se non esiste già) una sottodirectory di
+nome ... (tre punti).
+Tutti i file (regolari) presenti nella directory devono essere spostati nella sottodirectory ... (tre punti) e
+ogni file deve essere sostituito nella dir passata come arg con un link simbolico (relativo, non assoluto) alla
+nuova locazione. Usare la system call rename per fare la sostituzione in modo atomico (in nessun
+istante il file deve risultare inesistente)*/
+/*(UNDO) Scrivere un programma che sostituisca tutti i link simbolici presenti nella
+directory corrente che puntano a ... /nomefile con i veri file che l'esercizio 1 aveva spostato nella
+directory tre punti. Usare la system call rename per fare la sostituzione in modo atomico (in nessun
+istante il file deve risultare inesistente)*/
+
+int main(int argc, char * argv[]){
+
+    if(argc!=2){
+        printf("Use ./undomvclone &lt;dir/&gt; dove dir è la dir passata come arg a ./mvclone");
+        return 1;
+    }
+
+    char startingDir[1024]={0};
+    realpath(argv[1], startingDir);
+
+    char cloneDir[1024]={0};
+    snprintf(cloneDir, sizeof(cloneDir), "%s/...", startingDir);
+
+    DIR * _startingDir=opendir(startingDir);
+    struct dirent *dp;
+
+    while((dp=readdir(_startingDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name,".")==0 || strcmp(dp-&gt;d_name, "..")==0) continue;
+
+        char dpPath[1024]={0};
+        snprintf(dpPath,sizeof(dpPath),"%s/%s",startingDir,dp-&gt;d_name);
+
+        struct stat dpStat;
+        lstat(dpPath, &amp;dpStat);
+
+        if(S_ISLNK(dpStat.st_mode)){
+
+            char linkSrc[1024]={0};
+            readlink(dpPath,linkSrc,sizeof(linkSrc)-1);
+            if(strncmp(linkSrc, ".../",4)==0){ //Controllo che sia un link generato da mvclone, quindi che link qualcosa nella dir .../
+                char dpNewPath[1024]={0};
+                snprintf(dpNewPath,sizeof(dpNewPath),"%s/%s",cloneDir,dp-&gt;d_name);
+        
+                rename(dpNewPath, dpPath); 
+            }
+
+        }
+        
+    }
+    closedir(_startingDir);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>

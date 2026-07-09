@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Esame 2025-09-04</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header-info">
+        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+    </header>
+    <div class="main-content">
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
+        <h1>File dell'esame: 2025-09-04</h1>
+        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+
+        <div class="toc">
+            <h3>Indice degli esercizi</h3>
+            <ul>
+                <li><a href="#inotab-py">inotab.py</a></li>
+                <li><a href="#setup_inotab_test-py">setup_inotab_test.py</a></li>
+                <li><a href="#sha1index-c">sha1index.c</a></li>
+                <li><a href="#sha1index-c">sha1index.c</a></li>
+            </ul>
+        </div>
+
+        <section class="file-section" id="inotab-py">
+            <h2>File: inotab.py</h2>
+            <pre><code class="language-python">
+import sys
+import os
+
+#Questo programma scandisce il file system a partire dalla directory corrente e genera in output un
+#elenco (una riga per ogni file o directory) contenente il numero di i-node e il pathname del file:
+#6508 a
+#6609 x/b
+#6710 c
+#6801 x
+#L’elenco prodotto deve essere ordinato per valori crescenti del numero di i-node
+#Il programma inotab può avere come parametro un numero intero che limita la profondità della scansione.
+#Inotab → scandisce l’intero sottoalbero
+#inotab 0 → scandisce solo la directory corrente
+#inotab 1 → scandisce la directory corrente e le sottodirectory della dir corrente
+#inotab 2 → scandisce anche le sottodirectory delle sottodirectory, ma non va oltre, 
+
+def main():
+    result=[]
+    if len(sys.argv)==1:
+        #scandisce intero sottoalbero
+        for root,dirs,files in os.walk("."):
+            for f in files:
+                fullPath=os.path.join(root, f)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+            for d in dirs:
+                fullPath=os.path.join(root, d)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+            fullPath=os.path.join(root, ".")
+            result.append((os.stat(fullPath).st_ino,  fullPath ))
+
+    elif (len(sys.argv)==2 and sys.argv[1]=="0"):
+        #inotab 0 → scandisce solo la directory corrente
+        for root,dirs,files in os.walk("."):
+            dirs.clear()
+            for f in files:
+                fullPath=os.path.join(root, f)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+            fullPath=os.path.join(root, ".")
+            result.append((os.stat(fullPath).st_ino,  fullPath ))
+
+    elif (len(sys.argv)==2 and sys.argv[1]=="1"):
+        #inotab 1 → scandisce la directory corrente e le sottodirectory della dir corrente
+        
+        for root,dirs,files in os.walk("."):
+
+            currDepth=root.count(os.sep)
+
+            if(currDepth==0): #pari a zero all'inizio perché si stanno usando indirizzi relativi
+                result.append((os.stat(root).st_ino, root))
+
+            for f in files:
+                fullPath=os.path.join(root, f)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+            
+            for d in dirs:
+                fullPath=os.path.join(root, d)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+
+            if currDepth&gt;=1:
+                dirs.clear()
+
+
+    elif (len(sys.argv)==2 and sys.argv[1]=="2"):
+        #inotab 2 → scandisce anche le sottodirectory delle sottodirectory, ma non va oltre
+        
+        for root,dirs,files in os.walk("."):
+
+            currDepth=root.count(os.sep)
+
+            if(currDepth==0): 
+                result.append((os.stat(root).st_ino, root))
+
+            for f in files:
+                fullPath=os.path.join(root, f)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+            
+            for d in dirs:
+                fullPath=os.path.join(root, d)
+                result.append((os.stat(fullPath).st_ino, fullPath ))
+
+            if currDepth&gt;=2:
+                dirs.clear()
+
+    else:
+        print("Use: python inotab.py [0,1,2]")
+        sys.exit(1)
+    
+    result.sort(key=lambda x: x[0]) #sort per inode num
+
+    for inode, path in result:
+        print(inode, path)
+
+
+if __name__=="__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="setup_inotab_test-py">
+            <h2>File: setup_inotab_test.py</h2>
+            <pre><code class="language-python">
+import os
+import shutil
+
+def main():
+    base_dir = "test_inotab"
+
+    # Rimuove la directory di test se esiste già per garantire un ambiente pulito
+    if os.path.exists(base_dir):
+        shutil.rmtree(base_dir)
+
+    # Livello 0 (Directory base)
+    os.makedirs(base_dir)
+    open(os.path.join(base_dir, "file_L0_a.txt"), 'w').close()
+    open(os.path.join(base_dir, "file_L0_b.txt"), 'w').close()
+
+    # Livello 1 (Sottodirectory della base)
+    dir_l1_a = os.path.join(base_dir, "dir_L1_a")
+    dir_l1_b = os.path.join(base_dir, "dir_L1_b")
+    os.makedirs(dir_l1_a)
+    os.makedirs(dir_l1_b)
+    open(os.path.join(dir_l1_a, "file_L1_a.txt"), 'w').close()
+    open(os.path.join(dir_l1_b, "file_L1_b.txt"), 'w').close()
+
+    # Livello 2 (Sottodirectory del livello 1)
+    dir_l2 = os.path.join(dir_l1_a, "dir_L2")
+    os.makedirs(dir_l2)
+    open(os.path.join(dir_l2, "file_L2.txt"), 'w').close()
+
+    # Livello 3 (Per testare che inotab 2 si fermi prima di leggere questo livello)
+    dir_l3 = os.path.join(dir_l2, "dir_L3")
+    os.makedirs(dir_l3)
+    open(os.path.join(dir_l3, "file_L3.txt"), 'w').close()
+
+    print(f"Struttura generata con successo nella directory '{base_dir}'.\n")
+    print("Elenco completo degli i-node ordinati in ordine crescente:")
+    print("----------------------------------------------------------")
+
+    # Raccoglie tutti i percorsi (file e directory) e i relativi i-node
+    nodi = []
+    
+    # Aggiunge la directory radice di test
+    nodi.append((os.stat(base_dir).st_ino, base_dir))
+
+    for root, dirs, files in os.walk(base_dir):
+        for nome in dirs + files:
+            percorso_completo = os.path.join(root, nome)
+            inode = os.stat(percorso_completo).st_ino
+            nodi.append((inode, percorso_completo))
+
+    # Ordina la lista basandosi sul primo elemento della tupla (l'i-node)
+    nodi.sort(key=lambda x: x[0])
+
+    # Stampa i risultati nel formato richiesto
+    for inode, percorso in nodi:
+        print(f"{inode} {percorso}")
+
+if __name__ == "__main__":
+    main()
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="sha1index-c">
+            <h2>File: sha1index.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;dirent.h&gt;
+#include&lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include&lt;string.h&gt;
+#include&lt;openssl/evp.h&gt;
+
+#define BUFFER_SIZE 4096
+
+/*Scrivere un programma sha1index che ha al più unparametro. 
+(se non ha parametro opera sulla directory corrente, altrimenti sulla directory indicata dal parametro)
+Per ogni file f ordinario nella directory il programma crea un link simbolico in una sottodirectory
+nascosta di nome “.sha1index” che punta al file e ha come nome la hash sha1 del contenuto.
+Es. data nella dir corrente due file f1 e f2, il programma sha1index crea nella directory .sha1index
+due link simbolici:
+.sha1index/5e180efdd44e3a3585834b6bd618ef7c5a462d9a che punta a f1 e
+.sha1index/82442bcd9a1e36899d43c04f79491cd616f7b30a che punta a f2
+(i valori delle hash sono solo a titolo di esempio, rappresentano le hash del contenuto di f1 e di f2)*/
+
+//A CAUSA DELLA FUNZIONE CHE CALCOLA SHA1 COMPILA COSÌ: gcc sha1index.c -o sha1index -lcrypto
+/* Funzione per calcolare lo SHA-1 di un file */
+int calculate_sha1(const char *path, char outputBuffer[41]) {
+    FILE *file = fopen(path, "rb");
+    if (!file) return -1;
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        fclose(file);
+        return -1;
+    }
+
+    if (1 != EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL)) {
+        EVP_MD_CTX_free(mdctx);
+        fclose(file);
+        return -1;
+    }
+
+    unsigned char buffer[BUFFER_SIZE];
+    size_t bytesRead = 0;
+
+    while ((bytesRead = fread(buffer, 1, BUFFER_SIZE, file)) != 0) {
+        if (1 != EVP_DigestUpdate(mdctx, buffer, bytesRead)) {
+            EVP_MD_CTX_free(mdctx);
+            fclose(file);
+            return -1;
+        }
+    }
+
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int lengthOfHash = 0;
+
+    if (1 != EVP_DigestFinal_ex(mdctx, hash, &amp;lengthOfHash)) {
+        EVP_MD_CTX_free(mdctx);
+        fclose(file);
+        return -1;
+    }
+
+    EVP_MD_CTX_free(mdctx);
+    fclose(file);
+
+    // Converte in stringa esadecimale
+    for (unsigned int i = 0; i &lt; lengthOfHash; i++) {
+        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+    }
+    outputBuffer[40] = '\0';
+
+    return 0;
+}
+
+
+int main(int argv, char * argc[]){
+
+    if(argv&gt;2){
+        printf("Use: ./sha1index [./dir/]\n");
+        return 1;
+    }
+
+    char dir[256]=".sha1index/";
+    mkdir(dir, S_IRWXU);
+    
+    DIR *currDir;
+    if(argv==1){
+        currDir=opendir(".");
+    }
+    else currDir=opendir(argc[1]);
+
+    struct dirent *dp;
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".")==0 || strcmp(dp-&gt;d_name, "..")==0 || strcmp(dp-&gt;d_name, ".sha1index")==0) continue;
+
+        char relPath[256]={0};
+        if(argv==1){
+            snprintf(relPath, sizeof(relPath), "./%s", dp-&gt;d_name);
+        }
+        else snprintf(relPath, sizeof(relPath), "%s/%s", argc[1],dp-&gt;d_name);
+
+        struct stat buf;
+        lstat(relPath, &amp;buf);
+
+        if(S_ISREG(buf.st_mode)){
+
+            char fullPath[256]={0};
+            realpath(relPath,fullPath); //saves in 2arg the real absolute path of the first arg
+
+            char finalName[256]={0};
+            char hash[41]={0};
+
+            if(calculate_sha1(fullPath, hash)==0){
+                snprintf(finalName, sizeof(finalName), "%s%s", dir, hash);
+                symlink(fullPath, finalName);
+            }
+            
+        }
+
+    }
+
+    closedir(currDir);
+
+    
+
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+        <section class="file-section" id="sha1index-c">
+            <h2>File: sha1index.c</h2>
+            <pre><code class="language-c">
+#include&lt;stdio.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;dirent.h&gt;
+#include&lt;unistd.h&gt;
+#include &lt;stdlib.h&gt;
+#include&lt;string.h&gt;
+#include&lt;openssl/evp.h&gt;
+
+#define BUFFER_SIZE 4096
+
+/*Scrivere un programma sha1index che ha al più unparametro. 
+(se non ha parametro opera sulla directory corrente, altrimenti sulla directory indicata dal parametro)
+Per ogni file f ordinario nella directory il programma crea un link simbolico in una sottodirectory
+nascosta di nome “.sha1index” che punta al file e ha come nome la hash sha1 del contenuto.
+Es. data nella dir corrente due file f1 e f2, il programma sha1index crea nella directory .sha1index
+due link simbolici:
+.sha1index/5e180efdd44e3a3585834b6bd618ef7c5a462d9a che punta a f1 e
+.sha1index/82442bcd9a1e36899d43c04f79491cd616f7b30a che punta a f2
+(i valori delle hash sono solo a titolo di esempio, rappresentano le hash del contenuto di f1 e di f2)*/
+/*Scrivere un programma sha1update che aggiorna i file creati dal
+programma dell’esercizio 1. Per ogni link simbolico presente nella directory nascosta .sha1index (se c’è)
+possono verificarsi due casi:
+• il file è stato cancellato (il link punta a un file inesistente), viene cancellato il link
+• il file è stato modificato più recentemente della data di creazione del link, occorre aggiornare il
+link simbolico (si ricalcola la hash e si ricrea il link simbolico)*/
+
+//A CAUSA DELLA FUNZIONE CHE CALCOLA SHA1 COMPILA COSÌ: gcc sha1index.c -o sha1index -lcrypto
+/* Funzione per calcolare lo SHA-1 di un file */
+int calculate_sha1(const char *path, char outputBuffer[41]) {
+    FILE *file = fopen(path, "rb");
+    if (!file) return -1;
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (mdctx == NULL) {
+        fclose(file);
+        return -1;
+    }
+
+    if (1 != EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL)) {
+        EVP_MD_CTX_free(mdctx);
+        fclose(file);
+        return -1;
+    }
+
+    unsigned char buffer[BUFFER_SIZE];
+    size_t bytesRead = 0;
+
+    while ((bytesRead = fread(buffer, 1, BUFFER_SIZE, file)) != 0) {
+        if (1 != EVP_DigestUpdate(mdctx, buffer, bytesRead)) {
+            EVP_MD_CTX_free(mdctx);
+            fclose(file);
+            return -1;
+        }
+    }
+
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int lengthOfHash = 0;
+
+    if (1 != EVP_DigestFinal_ex(mdctx, hash, &amp;lengthOfHash)) {
+        EVP_MD_CTX_free(mdctx);
+        fclose(file);
+        return -1;
+    }
+
+    EVP_MD_CTX_free(mdctx);
+    fclose(file);
+
+    // Converte in stringa esadecimale
+    for (unsigned int i = 0; i &lt; lengthOfHash; i++) {
+        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+    }
+    outputBuffer[40] = '\0';
+
+    return 0;
+}
+
+
+int main(int argv, char * argc[]){
+
+    char hiddenDir[256]={0};
+    realpath(".sha1index/",hiddenDir);
+
+    DIR *currDir=opendir(hiddenDir);
+    struct dirent *dp;
+    while((dp=readdir(currDir))!=NULL){
+
+        if(strcmp(dp-&gt;d_name, ".") == 0 || strcmp(dp-&gt;d_name, "..") == 0) continue;
+
+        char fullPath[256]={0};
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", hiddenDir,dp-&gt;d_name);
+
+        char src[4096]={0};
+        int lettura=readlink(fullPath, src, sizeof(src)-1); //ritorna numero di caaratteri copiati, o -1 se non riesce a leggere
+        src[lettura]='\0';
+
+        if(lettura==-1){
+            //C'è un errore, elimino questo link
+            unlink(fullPath);
+            continue;
+        }
+        
+        struct stat srcStat;
+                
+        if(stat(src, &amp;srcStat)==-1){
+            unlink(fullPath);
+            continue;
+        }
+        struct stat linkStat;
+        lstat(fullPath, &amp;linkStat);
+
+        if(srcStat.st_mtime&gt;linkStat.st_mtime){
+            char hash[41]={0};
+            if(calculate_sha1(src, hash)==0){
+                if(strcmp(dp-&gt;d_name,hash)==0){
+                    //hash uguale ma ci sono state modifiche: elimino e ricreo
+                    unlink(fullPath);
+                    symlink(src,fullPath);
+                }
+                else{
+                    char newName[256]={0};
+                    snprintf(newName, sizeof(newName), "%s/%s", hiddenDir, hash);
+                    symlink(src,newName);
+                    unlink(fullPath);                    
+                }
+            }
+        }
+
+
+    }
+    closedir(currDir);
+
+    return 0;
+}
+            </code></pre>
+        </section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach((block) => {
+        let code = block.innerHTML;
+        let lang = block.className;
+        
+        let tokens = {};
+        let tokenIndex = 0;
+        
+        function saveToken(match, type) {
+            let id = `__TOKEN_${tokenIndex++}__`;
+            tokens[id] = `<span class="token ${type}">${match}</span>`;
+            return id;
+        }
+
+        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
+        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
+        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
+        
+        if (lang === 'language-c') {
+            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
+                if (m.includes("__TOKEN_")) return m;
+                return saveToken(m, 'preprocessor');
+            });
+        }
+
+        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
+
+        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
+
+        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
+
+        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
+            if (m.startsWith("__TOKEN_")) return m;
+            return saveToken(m, 'constant');
+        });
+
+        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+            if (p1.startsWith("__TOKEN_")) return match;
+            return saveToken(p1, 'function') + match.substring(p1.length);
+        });
+
+        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
+            if (prop.startsWith("__TOKEN_")) return match;
+            return op + saveToken(prop, 'property');
+        });
+
+        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
+
+        let hasTokens = true;
+        let safety = 1000;
+        while (hasTokens && safety > 0) {
+            hasTokens = false;
+            for (let id in tokens) {
+                if (code.includes(id)) {
+                    code = code.replace(id, tokens[id]);
+                    hasTokens = true;
+                }
+            }
+            safety--;
+        }
+
+        block.innerHTML = code;
+    });
+});
+</script>
+    </div>
+</body>
+</html>
