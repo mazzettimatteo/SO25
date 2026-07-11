@@ -2,4 +2,4 @@
 <h2>Appunti</h2>
 <p>Gli appunti presi in classe sono organizzati per data.</p>
 <h2>Esercizi concorrenza</h2>
-<p>Gli esercizi d'esame svolti in preparazione al parziale si trovano nella cartella <i>eserciziConcorrenza</i>.</p>
+<p>Gli esercizi d'esame svolti in preparazione al parziale si trovano nella cartella <i>eserciziConcorrenza</i> o sul sito web: <a href="https://mazzettimatteo.github.io/SO25/">https://mazzettimatteo.github.io/SO25/</a></p>
