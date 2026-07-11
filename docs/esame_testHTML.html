@@ -1,21 +1,24 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Esame testHTML</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <header class="header-info">
-        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+      <h2>
+        Sistemi Operativi - Soluzioni prove pratiche - Matteo Mazzetti
+        matteo.mazzetti13@studio.unibo.it
+      </h2>
     </header>
     <div class="main-content">
-        <h1>File dell'esame: testHTML</h1>
-        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+      <h1>File dell'esame: testHTML</h1>
+      <a href="index.html" class="back-link">Torna all'indice degli esami</a>
 
-        <section class="file-section">
-            <h2>File: creaHTML.py</h2>
-            <pre><code class="language-python">
+      <section class="file-section">
+        <h2>File: creaHTML.py</h2>
+        <pre><code class="language-python">
 import os
 
 directory_appunti = "./.." 
@@ -31,7 +34,7 @@ def get_html_inizio(titolo_pagina, titolo_h1):
 &lt;/head&gt;
 &lt;body&gt;
     &lt;header class="header-info"&gt;
-        &lt;h2&gt;Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it&lt;/h2&gt;
+        &lt;h2&gt;Sistemi Operativi - Soluzioni prove pratiche - Matteo Mazzetti matteo.mazzetti13@studio.unibo.it&lt;/h2&gt;
     &lt;/header&gt;
     &lt;div class="main-content"&gt;
         &lt;h1&gt;{titolo_h1}&lt;/h1&gt;
@@ -186,79 +189,97 @@ for data in date_esame_ordinate:
             
         f_out.write(html_fine)
             </code></pre>
-        </section>
+      </section>
 
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          document.querySelectorAll("pre code").forEach((block) => {
+            let code = block.innerHTML;
+            let lang = block.className;
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("pre code").forEach((block) => {
-        let code = block.innerHTML;
-        let lang = block.className;
-        
-        let tokens = {};
-        let tokenIndex = 0;
-        
-        function saveToken(match, type) {
-            let id = `__TOKEN_${tokenIndex++}__`;
-            tokens[id] = `<span class="token ${type}">${match}</span>`;
-            return id;
-        }
+            let tokens = {};
+            let tokenIndex = 0;
 
-        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
-        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
-        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
-        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
-        
-        if (lang === 'language-c') {
-            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
-                if (m.includes("__TOKEN_")) return m;
-                return saveToken(m, 'preprocessor');
-            });
-        }
-
-        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
-        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
-
-        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
-        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
-
-        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
-        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
-
-        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
-            if (m.startsWith("__TOKEN_")) return m;
-            return saveToken(m, 'constant');
-        });
-
-        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
-            if (p1.startsWith("__TOKEN_")) return match;
-            return saveToken(p1, 'function') + match.substring(p1.length);
-        });
-
-        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
-            if (prop.startsWith("__TOKEN_")) return match;
-            return op + saveToken(prop, 'property');
-        });
-
-        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
-
-        let hasTokens = true;
-        let safety = 1000;
-        while (hasTokens && safety > 0) {
-            hasTokens = false;
-            for (let id in tokens) {
-                if (code.includes(id)) {
-                    code = code.replace(id, tokens[id]);
-                    hasTokens = true;
-                }
+            function saveToken(match, type) {
+              let id = `__TOKEN_${tokenIndex++}__`;
+              tokens[id] = `<span class="token ${type}">${match}</span>`;
+              return id;
             }
-            safety--;
-        }
 
-        block.innerHTML = code;
-    });
-});
-</script>
+            code = code.replace(/\/\*[\s\S]*?\*\//g, (m) =>
+              saveToken(m, "comment"),
+            );
+            code = code.replace(/\/\/.*$/gm, (m) => saveToken(m, "comment"));
+            code = code.replace(/#.*$/gm, (m) => saveToken(m, "comment"));
+            code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, (m) =>
+              saveToken(m, "string"),
+            );
+
+            if (lang === "language-c") {
+              code = code.replace(
+                /^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm,
+                (m) => {
+                  if (m.includes("__TOKEN_")) return m;
+                  return saveToken(m, "preprocessor");
+                },
+              );
+            }
+
+            const controlKw =
+              "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+            code = code.replace(new RegExp(controlKw, "g"), (m) =>
+              saveToken(m, "control"),
+            );
+
+            const typeKw =
+              "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+            code = code.replace(new RegExp(typeKw, "g"), (m) =>
+              saveToken(m, "type"),
+            );
+
+            const customTypeKw =
+              "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+            code = code.replace(new RegExp(customTypeKw, "g"), (m) =>
+              saveToken(m, "customtype"),
+            );
+
+            code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, (m) => {
+              if (m.startsWith("__TOKEN_")) return m;
+              return saveToken(m, "constant");
+            });
+
+            code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+              if (p1.startsWith("__TOKEN_")) return match;
+              return saveToken(p1, "function") + match.substring(p1.length);
+            });
+
+            code = code.replace(
+              /(-&gt;|\.)([a-zA-Z_]\w*)\b/g,
+              (match, op, prop) => {
+                if (prop.startsWith("__TOKEN_")) return match;
+                return op + saveToken(prop, "property");
+              },
+            );
+
+            code = code.replace(/\b(\d+)\b/g, (m) => saveToken(m, "number"));
+
+            let hasTokens = true;
+            let safety = 1000;
+            while (hasTokens && safety > 0) {
+              hasTokens = false;
+              for (let id in tokens) {
+                if (code.includes(id)) {
+                  code = code.replace(id, tokens[id]);
+                  hasTokens = true;
+                }
+              }
+              safety--;
+            }
+
+            block.innerHTML = code;
+          });
+        });
+      </script>
     </div>
-</body>
+  </body>
 </html>

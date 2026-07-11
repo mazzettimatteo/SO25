@@ -216,3 +216,90 @@ pre {
 .tag.python-tag {
     background-color: #28a745;
 }
+
+/* Sezione Filtro nell'indice */
+.filter-section {
+    background-color: #e9ecef;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    border: 1px solid #ced4da;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-label {
+    font-weight: bold;
+    color: #495057;
+}
+
+.filter-select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    font-size: 1em;
+    min-width: 250px;
+}
+
+/* Gestione visibilità degli elementi filtrati da JS */
+.hidden-item {
+    display: none !important;
+}
+
+/* Allineamento file e tag nell'indice */
+.exam-list-item {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    transition: box-shadow 0.2s;
+}
+
+.exam-list-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.index-files {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin: 8px 0;
+}
+
+.index-tags {
+    margin-top: 12px;
+}
+
+/* Stile per i tag (condiviso tra indice ed esami) */
+.tags-container {
+    margin: 0 0 25px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+}
+
+.tags-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1em;
+    color: #343a40;
+    text-transform: uppercase;
+}
+
+.tag {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 4px 10px;
+    margin: 3px 5px 3px 0;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+}
+
+.tag.python-tag {
+    background-color: #28a745;
+}

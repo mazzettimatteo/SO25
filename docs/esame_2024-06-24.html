@@ -1,44 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Esame 2024-06-24</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <header class="header-info">
-        <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
+      <h2>
+        Sistemi Operativi - Soluzioni prove pratiche - Matteo Mazzetti
+        matteo.mazzetti13@studio.unibo.it
+      </h2>
     </header>
     <div class="main-content">
-        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
-        <h1>File dell'esame: 2024-06-24</h1>
-        <a href="index.html" class="back-link">Torna all'indice degli esami</a>
+      <p class="ai-disclaimer">
+        I file di nome test.py, maketest.py, creaTest.py e simili sono file
+        generati da un AI utilizzati per testare il codice.
+      </p>
+      <h1>File dell'esame: 2024-06-24</h1>
+      <a href="index.html" class="back-link">Torna all'indice degli esami</a>
 
-        <div class="tags-container">
-            <h3>Syscall e Metodi utilizzati:</h3>
-            <span class="tag">execv</span>
-            <span class="tag">fork</span>
-            <span class="tag">read</span>
-            <span class="tag">unlink</span>
-            <span class="tag">waitpid</span>
-            <span class="tag python-tag">os.mkdir</span>
-            <span class="tag python-tag">os.symlink</span>
-            <span class="tag python-tag">subprocess.run</span>
-            <span class="tag python-tag">sys.argv</span>
-        </div>
+      <div class="tags-container">
+        <h3>Syscall e Metodi utilizzati in questo esame:</h3>
+        <span class="tag">execv</span>
+        <span class="tag">fork</span>
+        <span class="tag">read</span>
+        <span class="tag">unlink</span>
+        <span class="tag">waitpid</span>
+        <span class="tag python-tag">os.mkdir</span>
+        <span class="tag python-tag">os.symlink</span>
+        <span class="tag python-tag">subprocess.run</span>
+        <span class="tag python-tag">sys.argv</span>
+      </div>
 
-        <div class="toc">
-            <h3>Indice degli esercizi</h3>
-            <ul>
-                <li><a href="#inotirun-c">inotirun.c</a></li>
-                <li><a href="#permdir-py">permdir.py</a></li>
-                <li><a href="#testare-py">testare.py</a></li>
-            </ul>
-        </div>
+      <div class="toc">
+        <h3>Indice degli esercizi</h3>
+        <ul>
+          <li><a href="#inotirun-c">inotirun.c</a></li>
+          <li><a href="#permdir-py">permdir.py</a></li>
+          <li><a href="#testare-py">testare.py</a></li>
+        </ul>
+      </div>
 
-        <section class="file-section" id="inotirun-c">
-            <h2>File: inotirun.c</h2>
-            <pre><code class="language-c">
+      <section class="file-section" id="inotirun-c">
+        <h2>File: inotirun.c</h2>
+        <pre><code class="language-c">
 #include&lt;stdio.h&gt;
 #include&lt;limits.h&gt;
 #include&lt;unistd.h&gt;
@@ -127,11 +133,11 @@ int main(int argc, char * argv[]){
     return 0;
 }
             </code></pre>
-        </section>
+      </section>
 
-        <section class="file-section" id="permdir-py">
-            <h2>File: permdir.py</h2>
-            <pre><code class="language-python">
+      <section class="file-section" id="permdir-py">
+        <h2>File: permdir.py</h2>
+        <pre><code class="language-python">
 import sys
 import os
 import subprocess
@@ -184,11 +190,11 @@ def main():
 if __name__=="__main__":
     main()
             </code></pre>
-        </section>
+      </section>
 
-        <section class="file-section" id="testare-py">
-            <h2>File: testare.py</h2>
-            <pre><code class="language-python">
+      <section class="file-section" id="testare-py">
+        <h2>File: testare.py</h2>
+        <pre><code class="language-python">
 import os
 import stat
 import shutil
@@ -240,79 +246,97 @@ def main():
 if __name__ == "__main__":
     main()
             </code></pre>
-        </section>
+      </section>
 
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          document.querySelectorAll("pre code").forEach((block) => {
+            let code = block.innerHTML;
+            let lang = block.className;
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("pre code").forEach((block) => {
-        let code = block.innerHTML;
-        let lang = block.className;
-        
-        let tokens = {};
-        let tokenIndex = 0;
-        
-        function saveToken(match, type) {
-            let id = `__TOKEN_${tokenIndex++}__`;
-            tokens[id] = `<span class="token ${type}">${match}</span>`;
-            return id;
-        }
+            let tokens = {};
+            let tokenIndex = 0;
 
-        code = code.replace(/\/\*[\s\S]*?\*\//g, m => saveToken(m, 'comment'));
-        code = code.replace(/\/\/.*$/gm, m => saveToken(m, 'comment'));
-        code = code.replace(/#.*$/gm, m => saveToken(m, 'comment'));
-        code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, m => saveToken(m, 'string'));
-        
-        if (lang === 'language-c') {
-            code = code.replace(/^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm, m => {
-                if (m.includes("__TOKEN_")) return m;
-                return saveToken(m, 'preprocessor');
-            });
-        }
-
-        const controlKw = "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
-        code = code.replace(new RegExp(controlKw, "g"), m => saveToken(m, 'control'));
-
-        const typeKw = "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
-        code = code.replace(new RegExp(typeKw, "g"), m => saveToken(m, 'type'));
-
-        const customTypeKw = "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
-        code = code.replace(new RegExp(customTypeKw, "g"), m => saveToken(m, 'customtype'));
-
-        code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, m => {
-            if (m.startsWith("__TOKEN_")) return m;
-            return saveToken(m, 'constant');
-        });
-
-        code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
-            if (p1.startsWith("__TOKEN_")) return match;
-            return saveToken(p1, 'function') + match.substring(p1.length);
-        });
-
-        code = code.replace(/(-&gt;|\.)([a-zA-Z_]\w*)\b/g, (match, op, prop) => {
-            if (prop.startsWith("__TOKEN_")) return match;
-            return op + saveToken(prop, 'property');
-        });
-
-        code = code.replace(/\b(\d+)\b/g, m => saveToken(m, 'number'));
-
-        let hasTokens = true;
-        let safety = 1000;
-        while (hasTokens && safety > 0) {
-            hasTokens = false;
-            for (let id in tokens) {
-                if (code.includes(id)) {
-                    code = code.replace(id, tokens[id]);
-                    hasTokens = true;
-                }
+            function saveToken(match, type) {
+              let id = `__TOKEN_${tokenIndex++}__`;
+              tokens[id] = `<span class="token ${type}">${match}</span>`;
+              return id;
             }
-            safety--;
-        }
 
-        block.innerHTML = code;
-    });
-});
-</script>
+            code = code.replace(/\/\*[\s\S]*?\*\//g, (m) =>
+              saveToken(m, "comment"),
+            );
+            code = code.replace(/\/\/.*$/gm, (m) => saveToken(m, "comment"));
+            code = code.replace(/#.*$/gm, (m) => saveToken(m, "comment"));
+            code = code.replace(/(["'])(?:(?!\1)[^\\]|\\.)*\1/g, (m) =>
+              saveToken(m, "string"),
+            );
+
+            if (lang === "language-c") {
+              code = code.replace(
+                /^[ \t]*#\s*(include|define|pragma|ifndef|endif|ifdef).*$/gm,
+                (m) => {
+                  if (m.includes("__TOKEN_")) return m;
+                  return saveToken(m, "preprocessor");
+                },
+              );
+            }
+
+            const controlKw =
+              "\\b(if|else|while|for|return|switch|case|break|continue|default|in|try|except|with|as|pass|elif)\\b";
+            code = code.replace(new RegExp(controlKw, "g"), (m) =>
+              saveToken(m, "control"),
+            );
+
+            const typeKw =
+              "\\b(int|void|char|float|double|struct|union|typedef|static|long|short|unsigned|def|class|import|from)\\b";
+            code = code.replace(new RegExp(typeKw, "g"), (m) =>
+              saveToken(m, "type"),
+            );
+
+            const customTypeKw =
+              "\\b(dirent|stat|size_t|ssize_t|DIR|FILE|True|False|None)\\b";
+            code = code.replace(new RegExp(customTypeKw, "g"), (m) =>
+              saveToken(m, "customtype"),
+            );
+
+            code = code.replace(/\b([A-Z_][A-Z0-9_]*)\b/g, (m) => {
+              if (m.startsWith("__TOKEN_")) return m;
+              return saveToken(m, "constant");
+            });
+
+            code = code.replace(/\b([a-zA-Z_]\w*)\s*(?=\()/g, (match, p1) => {
+              if (p1.startsWith("__TOKEN_")) return match;
+              return saveToken(p1, "function") + match.substring(p1.length);
+            });
+
+            code = code.replace(
+              /(-&gt;|\.)([a-zA-Z_]\w*)\b/g,
+              (match, op, prop) => {
+                if (prop.startsWith("__TOKEN_")) return match;
+                return op + saveToken(prop, "property");
+              },
+            );
+
+            code = code.replace(/\b(\d+)\b/g, (m) => saveToken(m, "number"));
+
+            let hasTokens = true;
+            let safety = 1000;
+            while (hasTokens && safety > 0) {
+              hasTokens = false;
+              for (let id in tokens) {
+                if (code.includes(id)) {
+                  code = code.replace(id, tokens[id]);
+                  hasTokens = true;
+                }
+              }
+              safety--;
+            }
+
+            block.innerHTML = code;
+          });
+        });
+      </script>
     </div>
-</body>
+  </body>
 </html>
