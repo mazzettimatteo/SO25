@@ -1,7 +1,24 @@
 import os
+import re
 
-directory_appunti = "./eserciziPratico" 
+directory_appunti = "../eserciziPratico" 
 file_output_index = "index.html"
+
+# Liste di keyword da cercare per generare i tag
+C_SYSCALLS = [
+    "fork", "execve", "execvp", "execlp", "execv", "execl", "wait", "waitpid", 
+    "pipe", "dup", "dup2", "open", "read", "write", "close", "stat", "lstat", 
+    "fstat", "opendir", "readdir", "closedir", "kill", "signal", "sigaction", 
+    "mkfifo", "link", "unlink", "symlink", "readlink", "chmod", "chown"
+]
+
+PY_METHODS = [
+    "os.fork", "os.exec", "os.pipe", "os.dup", "os.dup2", "os.open", "os.read", 
+    "os.write", "os.close", "os.stat", "os.lstat", "os.listdir", "os.walk", 
+    "os.kill", "os.symlink", "os.link", "os.unlink", "os.remove", "os.mkdir", 
+    "os.rmdir", "signal.signal", "subprocess.run", "subprocess.Popen", 
+    "argparse.ArgumentParser", "sys.argv"
+]
 
 def get_html_inizio(titolo_pagina, titolo_h1):
     return f"""<!DOCTYPE html>
@@ -16,11 +33,10 @@ def get_html_inizio(titolo_pagina, titolo_h1):
         <h2>Soluzioni di Matteo Mazzetti - matteo.mazzetti13@studio.unibo.it</h2>
     </header>
     <div class="main-content">
-        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice. </p>
+        <p class="ai-disclaimer">I file di nome test.py, maketest.py, creaTest.py e simili sono file generati da un AI utilizzati per testare il codice.</p>
         <h1>{titolo_h1}</h1>
 """
 
-# Script JavaScript originale per il syntax highlighting
 js_highlighter = r"""
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -138,7 +154,15 @@ with open(file_output_index, "w", encoding="utf-8") as f_index:
     
     for data in date_esame_ordinate:
         nome_file_html = f"esame_{data.replace(' ', '_')}.html"
-        f_index.write(f'            <li><a href="{nome_file_html}" class="exam-link">Esame del: {data}</a></li>\n')
+        
+        # Estrae i nomi dei file per aggiungerli accanto alla data
+        file_names = [f[0] for f in sorted(esami_dict[data], key=lambda x: x[0])]
+        files_str = ", ".join(file_names)
+        
+        f_index.write(f'            <li>\n')
+        f_index.write(f'                <a href="{nome_file_html}" class="exam-link">Esame del: {data}</a>\n')
+        f_index.write(f'                <div class="index-files">File: {files_str}</div>\n')
+        f_index.write(f'            </li>\n')
         
     f_index.write('        </ul>\n')
     f_index.write(html_fine_index)
@@ -152,6 +176,35 @@ for data in date_esame_ordinate:
         f_out.write(f'        <a href="{file_output_index}" class="back-link">Torna all\'indice degli esami</a>\n\n')
         
         file_ordinati = sorted(esami_dict[data], key=lambda x: x[0])
+        
+        tags_c = set()
+        tags_py = set()
+        
+        # Prima passata per estrarre i tag dai file di questo esame
+        for file, percorso, lang_class in file_ordinati:
+            with open(percorso, "r", encoding="utf-8", errors="ignore") as f_in:
+                contenuto = f_in.read()
+                if lang_class == "language-c":
+                    for sc in C_SYSCALLS:
+                        # Cerca la syscall seguita da zero o più spazi e la parentesi tonda aperta
+                        if re.search(r'\b' + sc + r'\s*\(', contenuto):
+                            tags_c.add(sc)
+                elif lang_class == "language-python":
+                    for pm in PY_METHODS:
+                        # Cerca il metodo Python gestendo il punto nell'espressione regolare
+                        base_pm = pm.replace('.', r'\.')
+                        if re.search(r'\b' + base_pm, contenuto):
+                            tags_py.add(pm)
+
+        # Stampa la sezione dei tag se ne è stato trovato almeno uno
+        if tags_c or tags_py:
+            f_out.write('        <div class="tags-container">\n')
+            f_out.write('            <h3>Syscall e Metodi utilizzati:</h3>\n')
+            for t in sorted(tags_c):
+                f_out.write(f'            <span class="tag">{t}</span>\n')
+            for t in sorted(tags_py):
+                f_out.write(f'            <span class="tag python-tag">{t}</span>\n')
+            f_out.write('        </div>\n\n')
         
         # Creazione del menu interno per saltare ai vari file
         f_out.write('        <div class="toc">\n')

@@ -159,3 +159,60 @@ pre {
 .token.number {
     color: #005cc5;
 }
+
+/* Stili per la lista dei file nell'indice principale */
+.index-files {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.exam-list li {
+    margin: 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.exam-link {
+    display: inline-block;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Contenitore principale per i tag */
+.tags-container {
+    margin: 0 0 25px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+}
+
+.tags-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1em;
+    color: #343a40;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Stile per i singoli tag (C Syscalls) */
+.tag {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    padding: 4px 10px;
+    margin: 3px 5px 3px 0;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+}
+
+/* Variante colore per i metodi Python */
+.tag.python-tag {
+    background-color: #28a745;
+}
